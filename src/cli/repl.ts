@@ -4,6 +4,7 @@ import { getModelLabel } from '../config/defaults.js'
 import type { Container } from '../core/container.js'
 import { promptInput } from './input.js'
 import { handleSlashCommand } from './slash-commands.js'
+import { createProgressTracker } from './progress.js'
 import { banner, colors, formatError } from './ui.js'
 
 export async function startREPL(container: Container): Promise<void> {
@@ -29,11 +30,32 @@ export async function startREPL(container: Container): Promise<void> {
 
         // Slash commands
         if (text.startsWith('/')) {
-            const result = await handleSlashCommand(text, container)
-            if (result !== null) {
-                console.log(result)
+            const cmdName = text.split(' ')[0]
+            const needsSpinner = ['/init', '/plan', '/approve', '/compact'].includes(cmdName!)
+
+            if (needsSpinner) {
+                const spinner = clack.spinner()
+                spinner.start('Processando...')
+                const progress = createProgressTracker(container.eventBus, spinner)
+                try {
+                    const result = await handleSlashCommand(text, container)
+                    spinner.stop('Concluído')
+                    if (result !== null) {
+                        console.log(result)
+                    }
+                } catch (error) {
+                    spinner.stop('Erro')
+                    console.log(formatError((error as Error).message))
+                } finally {
+                    progress.dispose()
+                }
             } else {
-                console.log(formatError(`Comando desconhecido: ${text}`))
+                const result = await handleSlashCommand(text, container)
+                if (result !== null) {
+                    console.log(result)
+                } else {
+                    console.log(formatError(`Comando desconhecido: ${text}`))
+                }
             }
             continue
         }
@@ -67,10 +89,12 @@ export async function startREPL(container: Container): Promise<void> {
                 let hasOutput = false
                 const spinner = clack.spinner()
                 spinner.start('Processando...')
+                const progress = createProgressTracker(container.eventBus, spinner)
 
                 try {
                     for await (const chunk of container.orchestrator.processStream(text)) {
                         if (!isStreaming) {
+                            progress.dispose()
                             spinner.stop('')
                             isStreaming = true
                         }
@@ -89,6 +113,8 @@ export async function startREPL(container: Container): Promise<void> {
                         spinner.stop('Erro')
                     }
                     throw error
+                } finally {
+                    progress.dispose()
                 }
             }
         } catch (error) {

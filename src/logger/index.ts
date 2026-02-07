@@ -6,7 +6,9 @@ export type Logger = pino.Logger
 export function createLogger(config: ResolvedConfig): Logger {
     return pino({
         name: 'valarmind',
-        level: config.logLevel,
-        transport: config.logLevel === 'debug' ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
+        level: config.logLevel === 'debug' ? 'debug' : 'warn',
+        transport: config.logLevel === 'debug'
+            ? { target: 'pino-pretty', options: { colorize: true } }
+            : undefined,
     })
 }
