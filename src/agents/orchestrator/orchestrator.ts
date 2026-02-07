@@ -248,6 +248,34 @@ export class Orchestrator {
         return true
     }
 
+    async executePrebuiltPlan(plan: Plan, signal?: AbortSignal): Promise<string> {
+        const sessionId = randomUUID()
+        this.deps.tracer.startTrace(sessionId)
+        const span = this.deps.tracer.startSpan('orchestrator', { plan: plan.plan })
+
+        try {
+            const { agentContext } = await this.prepareContext(sessionId, signal)
+            const results = await this.executePlan(plan, plan.plan, agentContext)
+
+            // Filter out results from tasks marked as excludeFromSummary
+            const managedTasks = this.taskManager.getTasks()
+            const visibleResults = results.filter((r) => {
+                const idx = managedTasks.findIndex((t) => t.id === r.taskId)
+                return idx === -1 || !plan.tasks[idx]?.excludeFromSummary
+            })
+
+            const summary = this.synthesize(plan.plan, visibleResults.length > 0 ? visibleResults : results)
+
+            this.deps.tracer.endSpan(span)
+            this.deps.tracer.endTrace()
+            return summary
+        } catch (error) {
+            this.deps.tracer.endSpan(span)
+            this.deps.tracer.endTrace()
+            throw error
+        }
+    }
+
     private async prepareContext(sessionId: string, signal?: AbortSignal) {
         const projectContext = await this.deps.contextLoader.load(this.deps.projectDir)
         const state = await this.deps.stateManager.load()
@@ -294,11 +322,22 @@ export class Orchestrator {
                     return null
                 }
 
-                const depContext: Record<string, unknown> = {}
+                let depContext: Record<string, unknown> = {}
                 for (const depIdx of task.dependsOn) {
                     const depTask = tasks[depIdx]
                     if (depTask?.result) {
-                        depContext[`${depTask.agent}_result`] = depTask.result
+                        depContext[`${depTask.agent}_${depIdx}_result`] = depTask.result
+                    }
+                }
+
+                // TOON-encode dependency results when task opts in
+                const planTask = plan.tasks[taskIndex]
+                if (planTask?.toonCompact && Object.keys(depContext).length > 0) {
+                    try {
+                        const { encode } = await import('@toon-format/toon')
+                        depContext = { _toon_encoded: encode(depContext) }
+                    } catch {
+                        // Fallback: use depContext as-is (JSON)
                     }
                 }
 

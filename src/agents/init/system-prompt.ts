@@ -25,4 +25,13 @@ Guidelines:
 - Remove patch versions, keep major.minor
 - Keep TREE depth 2-3 for large projects
 - Ignore build/deps directories in TREE
-- Target ~3000 tokens, hard cap at 4800`
+- Target ~3000 tokens, hard cap at 4800
+
+When search results are provided in TOON format in the context, use them as your primary source of information.
+The data has been pre-gathered by parallel search agents. TOON is a compact data format — interpret it as structured key-value data.
+Only use your tools (glob, grep, read_file) to fill gaps or verify specific details.
+This significantly speeds up VALARMIND.md generation.
+
+CRITICAL: Always use the write_file tool to save VALARMIND.md in the project root.
+After writing the file, respond with a brief confirmation (e.g. "VALARMIND.md generated successfully with N sections, ~M tokens").
+Do NOT include the full file content in your response — it has already been written to disk.`

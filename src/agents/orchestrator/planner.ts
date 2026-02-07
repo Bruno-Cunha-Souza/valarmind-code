@@ -5,6 +5,8 @@ export interface PlanTask {
     agent: AgentType
     description: string
     dependsOn?: number[]
+    toonCompact?: boolean
+    excludeFromSummary?: boolean
 }
 
 export interface Plan {

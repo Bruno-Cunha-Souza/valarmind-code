@@ -31,5 +31,5 @@ export const AGENT_TIMEOUTS: Record<AgentType, { default: number; max: number }>
     test: { default: 180, max: 600 },
     docs: { default: 60, max: 120 },
     qa: { default: 120, max: 300 },
-    init: { default: 90, max: 180 },
+    init: { default: 120, max: 300 },
 }

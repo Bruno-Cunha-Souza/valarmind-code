@@ -21,4 +21,16 @@ export class InitAgent extends BaseAgent {
         }
         return prompt
     }
+
+    formatTask(description: string, additionalContext?: Record<string, unknown>): string {
+        let prompt = description
+        if (additionalContext) {
+            if (typeof additionalContext._toon_encoded === 'string') {
+                prompt += `\n\nPre-gathered search results (TOON format):\n${additionalContext._toon_encoded}`
+            } else {
+                prompt += `\n\nAdditional context:\n${JSON.stringify(additionalContext, null, 2)}`
+            }
+        }
+        return prompt
+    }
 }

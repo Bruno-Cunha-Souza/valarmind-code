@@ -5,6 +5,7 @@ import { maskApiKey } from '../auth/credentials.js'
 import { AVAILABLE_MODELS, MODEL_ALIASES, getModelLabel } from '../config/defaults.js'
 import { saveGlobalConfig } from '../config/persistence.js'
 import type { Container } from '../core/container.js'
+import type { Plan } from '../agents/orchestrator/planner.js'
 import { askApiKey, askModel } from './prompts.js'
 import { colors } from './ui.js'
 
@@ -59,7 +60,59 @@ const commands: SlashCommand[] = [
         name: '/init',
         description: 'Gera VALARMIND.md',
         handler: async (container) => {
-            return container.orchestrator.process('Analyze this project and generate a VALARMIND.md file following the Init Agent guidelines.')
+            const plan: Plan = {
+                plan: 'Analyze project with parallel search agents and generate VALARMIND.md',
+                tasks: [
+                    {
+                        agent: 'search',
+                        description: `Analyze project structure and metadata:
+1. Use tree_view to get directory structure (depth 3)
+2. Read package.json for project info, scripts, and top-level dependencies
+3. Read README.md for project description and objective
+4. Read tsconfig.json or equivalent compiler config
+5. Glob for config files: biome.json, .eslintrc*, .prettierrc*, jest.config*, vitest.config*
+
+Return a structured summary with: project description, tech stack, available scripts/commands, directory tree.`,
+                        excludeFromSummary: true,
+                    },
+                    {
+                        agent: 'search',
+                        description: `Analyze code architecture and design patterns:
+1. Glob src/**/*.ts (or main source directory) to map file structure
+2. Grep for exported classes, interfaces, and key functions
+3. Read entry points (src/index.ts, src/main.ts, src/app.ts, or similar)
+4. Identify architectural patterns (layers, modules, services)
+
+Return a structured summary with: main modules and responsibilities, architectural pattern, key entry points, design patterns.`,
+                        excludeFromSummary: true,
+                    },
+                    {
+                        agent: 'search',
+                        description: `Analyze dependencies, practices, and security:
+1. Read package.json dependencies and devDependencies for key libraries and versions
+2. Grep for authentication/authorization patterns (auth, jwt, session, password, bcrypt)
+3. Grep for test patterns (describe, it, test, expect) to identify test framework
+4. Glob for CI/CD configs (.github/workflows/*, Dockerfile, docker-compose*)
+5. Glob for .env.example or environment documentation
+
+Return a structured summary with: key dependencies with versions, testing framework, security-sensitive areas, CI/CD setup.`,
+                        excludeFromSummary: true,
+                    },
+                    {
+                        agent: 'init',
+                        description: `Generate VALARMIND.md using the pre-gathered search results from context.
+The search agents have already analyzed the project. Use their findings (provided in TOON format in the context) to write a comprehensive VALARMIND.md.
+
+IMPORTANT: You MUST use the write_file tool to save the file as VALARMIND.md in the project root directory.
+After writing, respond with a brief confirmation message (e.g. "VALARMIND.md generated with X sections"). Do NOT output the file content in your response.
+
+Only use your own tools (glob, grep, read_file) if the search results are missing critical information.`,
+                        dependsOn: [0, 1, 2],
+                        toonCompact: true,
+                    },
+                ],
+            }
+            return container.orchestrator.executePrebuiltPlan(plan)
         },
     },
     {
