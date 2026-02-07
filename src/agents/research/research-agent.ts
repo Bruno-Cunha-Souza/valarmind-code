@@ -7,7 +7,11 @@ export class ResearchAgent extends BaseAgent {
     readonly type: AgentType = 'research'
 
     get allowedTools(): string[] {
-        return ['read_file', 'glob', 'grep', 'web_search', 'web_fetch']
+        return ['read_file', 'glob', 'grep', 'web_fetch']
+    }
+
+    get modelSuffix(): string {
+        return ':online'
     }
 
     buildSystemPrompt(context: AgentContext): string {

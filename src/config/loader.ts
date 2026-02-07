@@ -63,5 +63,9 @@ export async function loadConfig(options: LoadConfigOptions): Promise<ResolvedCo
         },
         hooks: { ...DEFAULT_CONFIG.hooks, ...merged.hooks },
         mcp: { ...DEFAULT_CONFIG.mcp, ...merged.mcp },
+        mcpPermissions: { ...DEFAULT_CONFIG.mcpPermissions, ...merged.mcpPermissions },
+        plugins: merged.plugins ?? DEFAULT_CONFIG.plugins,
+        pluginSettings: { ...DEFAULT_CONFIG.pluginSettings, ...merged.pluginSettings },
+        sandbox: { ...DEFAULT_CONFIG.sandbox, ...merged.sandbox },
     }
 }

@@ -16,7 +16,13 @@ export const bashTool: Tool<BashInput, string> = {
     parameters: BashInput,
     requiredPermission: 'execute',
     async execute(input, ctx) {
-        const { stdout, stderr } = await execaCommand(input.command, {
+        let command = input.command
+
+        if (ctx.sandboxManager?.enabled) {
+            command = ctx.sandboxManager.wrapCommand(command, ctx.agentType)
+        }
+
+        const { stdout, stderr } = await execaCommand(command, {
             cwd: input.cwd ?? ctx.cwd,
             timeout: input.timeout ?? 30000,
             reject: false,

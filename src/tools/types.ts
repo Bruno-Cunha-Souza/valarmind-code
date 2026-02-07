@@ -2,12 +2,14 @@ import type { ZodSchema } from 'zod'
 import type { FileSystem } from '../core/fs.js'
 import type { Result } from '../core/result.js'
 import type { AgentType, Permission } from '../core/types.js'
+import type { SandboxManager } from '../security/sandbox.js'
 
 export interface ToolContext {
     fs: FileSystem
     cwd: string
     agentType: AgentType
     signal?: AbortSignal
+    sandboxManager?: SandboxManager
 }
 
 export interface Tool<TInput = unknown, TOutput = unknown> {

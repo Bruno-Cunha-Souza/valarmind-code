@@ -39,7 +39,7 @@ export class SessionRecorder {
             // new file
         }
 
-        const content = existing + this.buffer.join('\n') + '\n'
+        const content = `${existing + this.buffer.join('\n')}\n`
         await this.fs.writeText(this.sessionPath, content)
         this.buffer = []
     }

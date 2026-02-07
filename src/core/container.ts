@@ -8,12 +8,15 @@ import { createLLMClient } from '../llm/client.js'
 import type { LLMClient } from '../llm/types.js'
 import type { Logger } from '../logger/index.js'
 import { createLogger } from '../logger/index.js'
+import { MCPManager } from '../mcp/manager.js'
 import { ContextLoader } from '../memory/context-loader.js'
 import { StateManager } from '../memory/state-manager.js'
 import { PermissionManager } from '../permissions/manager.js'
+import { PluginManager } from '../plugins/manager.js'
+import { SandboxManager } from '../security/sandbox.js'
 import { ToolExecutor } from '../tools/executor.js'
 import type { ToolRegistry } from '../tools/registry.js'
-import { createToolRegistry } from '../tools/setup.js'
+import { createToolRegistry, registerMCPTools } from '../tools/setup.js'
 import { TraceExporter } from '../tracing/exporter.js'
 import { MetricsCollector } from '../tracing/metrics.js'
 import { Tracer } from '../tracing/tracer.js'
@@ -38,6 +41,11 @@ export interface Container {
     permissionManager: PermissionManager
     orchestrator: Orchestrator
     metricsCollector: MetricsCollector
+    mcpManager: MCPManager
+    pluginManager: PluginManager
+    sandboxManager: SandboxManager
+    initialize(): Promise<void>
+    shutdown(): Promise<void>
 }
 
 export function createContainer(config: ResolvedConfig): Container {
@@ -54,7 +62,22 @@ export function createContainer(config: ResolvedConfig): Container {
     const contextLoader = new ContextLoader(fs, stateManager)
     const hookRunner = new HookRunner(config, logger, eventBus)
     const agentRegistry = createAgentRegistry()
-    const agentRunner = new AgentRunner(llmClient, toolExecutor, toolRegistry, tracer, eventBus, config.projectDir, fs, hookRunner, config.tokenBudget)
+    const mcpManager = new MCPManager(config.mcp?.servers ?? {}, logger)
+    const sandboxManager = new SandboxManager(config.sandbox?.enabled ?? false, logger)
+    const pluginManager = new PluginManager({ config, logger, eventBus, mcpManager }, logger)
+    const agentRunner = new AgentRunner(
+        llmClient,
+        toolExecutor,
+        toolRegistry,
+        tracer,
+        eventBus,
+        config.projectDir,
+        fs,
+        hookRunner,
+        config.tokenBudget,
+        config.model,
+        sandboxManager
+    )
     const orchestrator = new Orchestrator({
         llmClient,
         agentRunner,
@@ -68,7 +91,7 @@ export function createContainer(config: ResolvedConfig): Container {
     })
     const metricsCollector = new MetricsCollector(eventBus)
 
-    return {
+    const container: Container = {
         config,
         logger,
         eventBus,
@@ -86,5 +109,21 @@ export function createContainer(config: ResolvedConfig): Container {
         permissionManager,
         orchestrator,
         metricsCollector,
+        mcpManager,
+        pluginManager,
+        sandboxManager,
+
+        async initialize() {
+            await mcpManager.initialize()
+            await registerMCPTools(toolRegistry, mcpManager, config.mcpPermissions)
+            await pluginManager.loadFromConfig(config.plugins ?? [])
+        },
+
+        async shutdown() {
+            await pluginManager.shutdown()
+            await mcpManager.shutdown()
+        },
     }
+
+    return container
 }

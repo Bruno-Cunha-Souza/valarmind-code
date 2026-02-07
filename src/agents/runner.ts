@@ -3,6 +3,7 @@ import type { FileSystem } from '../core/fs.js'
 import type { HookRunner } from '../hooks/runner.js'
 import { PromptBuilder } from '../llm/prompt-builder.js'
 import type { ChatMessage, LLMClient } from '../llm/types.js'
+import type { SandboxManager } from '../security/sandbox.js'
 import type { ToolExecutor } from '../tools/executor.js'
 import type { ToolRegistry } from '../tools/registry.js'
 import type { ToolContext } from '../tools/types.js'
@@ -25,7 +26,9 @@ export class AgentRunner {
         private projectDir: string,
         private fs: FileSystem,
         private hookRunner?: HookRunner,
-        private tokenBudget: { target: number; hardCap: number } = { target: 3000, hardCap: 4800 }
+        private tokenBudget: { target: number; hardCap: number } = { target: 3000, hardCap: 4800 },
+        private defaultModel?: string,
+        private sandboxManager?: SandboxManager
     ) {}
 
     async run(agent: BaseAgent, task: AgentTask, context: AgentContext): Promise<AgentResult> {
@@ -57,7 +60,10 @@ export class AgentRunner {
             for (let turn = 0; turn < agent.maxTurns; turn++) {
                 if (controller.signal.aborted) break
 
+                const model = agent.modelSuffix && this.defaultModel ? `${this.defaultModel}${agent.modelSuffix}` : undefined
+
                 const response = await this.llmClient.chat({
+                    model,
                     messages,
                     tools: tools.length > 0 ? tools : undefined,
                     signal: controller.signal,
@@ -103,6 +109,7 @@ export class AgentRunner {
                     cwd: this.projectDir,
                     agentType: agent.type,
                     signal: controller.signal,
+                    sandboxManager: this.sandboxManager,
                 }
 
                 for (const call of response.toolCalls) {

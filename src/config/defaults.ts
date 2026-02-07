@@ -12,6 +12,14 @@ export const DEFAULT_CONFIG: Omit<ResolvedConfig, 'apiKey' | 'projectDir' | 'con
     agentTimeouts: {},
     hooks: {},
     mcp: {},
+    mcpPermissions: {
+        research: '*',
+        code: [],
+        qa: [],
+    },
+    plugins: [],
+    pluginSettings: {},
+    sandbox: { enabled: false, customProfiles: {} },
 }
 
 export const CONFIG_DIR = `${process.env.HOME ?? '~'}/.config/valarmind`

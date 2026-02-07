@@ -15,6 +15,12 @@ export class ToolRegistry {
         this.agentTools.set(agentType, toolNames)
     }
 
+    appendForAgent(agentType: AgentType, toolNames: string[]): void {
+        const existing = this.agentTools.get(agentType) ?? []
+        const merged = [...existing, ...toolNames.filter((n) => !existing.includes(n))]
+        this.agentTools.set(agentType, merged)
+    }
+
     get(name: string): AnyTool | undefined {
         return this.tools.get(name)
     }

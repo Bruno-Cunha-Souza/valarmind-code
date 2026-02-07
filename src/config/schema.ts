@@ -6,11 +6,17 @@ export const HookConfigSchema = z.object({
     timeout: z.number().optional(),
 })
 
-export const McpServerSchema = z.object({
-    command: z.string(),
-    args: z.array(z.string()).optional(),
-    env: z.record(z.string()).optional(),
-})
+export const McpServerSchema = z
+    .object({
+        command: z.string().optional(),
+        args: z.array(z.string()).optional(),
+        env: z.record(z.string()).optional(),
+        url: z.string().url().optional(),
+        headers: z.record(z.string()).optional(),
+        enabled: z.boolean().optional(),
+        timeout: z.number().optional(),
+    })
+    .refine((data) => data.command || data.url, { message: 'Server must have either command (stdio) or url (http)' })
 
 export const ConfigSchema = z.object({
     model: z.string().optional(),
@@ -50,6 +56,15 @@ export const ConfigSchema = z.object({
             servers: z.record(McpServerSchema).optional(),
         })
         .optional(),
+    mcpPermissions: z.record(z.union([z.literal('*'), z.array(z.string())])).optional(),
+    plugins: z.array(z.string()).optional(),
+    pluginSettings: z.record(z.unknown()).optional(),
+    sandbox: z
+        .object({
+            enabled: z.boolean().optional(),
+            customProfiles: z.record(z.unknown()).optional(),
+        })
+        .optional(),
 })
 
 export type Config = z.infer<typeof ConfigSchema>
@@ -67,6 +82,10 @@ export interface ResolvedConfig {
     planMode: boolean
     hooks: Config['hooks'] & {}
     mcp: Config['mcp'] & {}
+    mcpPermissions: Record<string, string[] | '*'>
+    plugins: string[]
+    pluginSettings: Record<string, unknown>
+    sandbox: { enabled: boolean; customProfiles: Record<string, unknown> }
     projectDir: string
     configDir: string
 }

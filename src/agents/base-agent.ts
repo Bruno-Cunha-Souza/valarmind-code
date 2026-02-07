@@ -19,6 +19,10 @@ export abstract class BaseAgent {
 
     abstract get allowedTools(): string[]
 
+    get modelSuffix(): string | undefined {
+        return undefined
+    }
+
     abstract buildSystemPrompt(context: AgentContext): string
 
     formatTask(description: string, additionalContext?: Record<string, unknown>): string {
