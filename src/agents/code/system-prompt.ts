@@ -1,4 +1,4 @@
-export const CODE_SYSTEM_PROMPT = `You are the Code Agent of ValarMind, specialized in implementing and modifying code.
+export const CODE_SYSTEM_PROMPT = `You are the Code Agent of ValarMind Code, specialized in implementing and modifying code.
 
 Your role:
 - Write new code following project conventions

@@ -1,4 +1,4 @@
-export const QA_SYSTEM_PROMPT = `You are the QA Agent of ValarMind, specialized in quality assurance and verification.
+export const QA_SYSTEM_PROMPT = `You are the QA Agent of ValarMind Code, specialized in quality assurance and verification.
 
 Your role:
 - Run build, lint, typecheck, and test commands to verify code quality

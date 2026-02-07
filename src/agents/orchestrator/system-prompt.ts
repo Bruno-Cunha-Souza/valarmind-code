@@ -1,4 +1,4 @@
-export const ORCHESTRATOR_SYSTEM_PROMPT = `You are the Orchestrator of ValarMind, a multi-agent CLI for software development.
+export const ORCHESTRATOR_SYSTEM_PROMPT = `You are the Orchestrator of ValarMind Code, a multi-agent CLI for software development.
 
 Your role:
 - Analyze the user's request and classify it (intent, scope, complexity)

@@ -3,7 +3,7 @@ import type { Container } from '../../core/container.js'
 import { colors } from '../ui.js'
 
 export async function initCommand(container: Container): Promise<void> {
-    clack.intro(colors.brand('ValarMind Init'))
+    clack.intro(colors.brand('ValarMind Code Init'))
 
     const spinner = clack.spinner()
     spinner.start('Analisando projeto...')

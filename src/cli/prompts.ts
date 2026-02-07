@@ -36,7 +36,7 @@ export async function confirmAction(message: string): Promise<boolean> {
 }
 
 export function showWelcome(): void {
-    clack.intro(colors.brand('ValarMind'))
+    clack.intro(colors.brand('ValarMind Code'))
 }
 
 export function showOutro(message: string): void {

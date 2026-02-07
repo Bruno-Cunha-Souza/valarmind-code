@@ -12,7 +12,7 @@ export const colors = {
 }
 
 export function banner(): string {
-    return `${colors.brand('ValarMind')} ${colors.dim('v0.1.0')} — CLI multi-agente`
+    return `${colors.brand('ValarMind Code')} ${colors.dim('v0.1.0')} — CLI multi-agente`
 }
 
 export function formatAgentResult(agent: string, summary: string): string {

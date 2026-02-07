@@ -1,10 +1,10 @@
 # Plugin Architecture
 
-This document defines ValarMind's extensibility system, combining MCP (Model Context Protocol) for external tools and native plugins for deep core integration.
+This document defines ValarMind Code's extensibility system, combining MCP (Model Context Protocol) for external tools and native plugins for deep core integration.
 
 ## Overview
 
-ValarMind uses a hybrid plugin architecture that leverages existing ecosystems while maintaining flexibility for custom extensions.
+ValarMind Code uses a hybrid plugin architecture that leverages existing ecosystems while maintaining flexibility for custom extensions.
 
 ```mermaid
 flowchart TD
@@ -390,7 +390,7 @@ await server.connect(transport);
 
 ## Native Plugins
 
-Native plugins provide deep integration with ValarMind's core for scenarios where MCP is insufficient.
+Native plugins provide deep integration with ValarMind Code's core for scenarios where MCP is insufficient.
 
 ### Plugin Types
 

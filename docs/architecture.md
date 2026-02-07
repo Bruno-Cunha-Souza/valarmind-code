@@ -1,8 +1,8 @@
-# Arquitetura ValarMind
+# Arquitetura ValarMind Code
 
 ## Visão Geral
 
-ValarMind é uma CLI multi-agente single-process usando async/await. Agentes rodam como chamadas LLM com tool-use, coordenados por um Orchestrator central.
+ValarMind Code é uma CLI multi-agente single-process usando async/await. Agentes rodam como chamadas LLM com tool-use, coordenados por um Orchestrator central.
 
 ```
 User → CLI → Bootstrap → Orchestrator → Agent(s) → Tools → Result → User

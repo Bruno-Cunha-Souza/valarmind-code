@@ -11,7 +11,7 @@ interface Check {
 }
 
 export async function doctorCommand(): Promise<void> {
-    console.log(colors.brand('ValarMind Doctor\n'))
+    console.log(colors.brand('ValarMind Code Doctor\n'))
 
     const checks: Check[] = []
     const fs = new BunFileSystem()

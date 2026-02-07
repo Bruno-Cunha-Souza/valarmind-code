@@ -1,4 +1,4 @@
-# ValarMind
+# ValarMind Code
 
 Multi-agent CLI for software development, inspired by Claude Code CLI and Codex CLI. Each step of the development process is handled by a specialist agent.
 

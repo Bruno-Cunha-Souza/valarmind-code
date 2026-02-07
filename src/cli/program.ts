@@ -14,7 +14,7 @@ export function createProgram(): Command {
     const program = new Command()
 
     program
-        .name('valarmind')
+        .name('valarmind-code')
         .description('CLI multi-agente para desenvolvimento de software')
         .version('0.1.0')
         .option('-p, --prompt <text>', 'Executa um prompt único')

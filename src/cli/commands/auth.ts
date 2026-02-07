@@ -51,7 +51,7 @@ export async function authCommand(options: AuthOptions): Promise<void> {
     let apiKey = options.key
 
     if (!apiKey) {
-        clack.intro(colors.brand('ValarMind Auth'))
+        clack.intro(colors.brand('ValarMind Code Auth'))
 
         const existingKey = await loadCredentials(fs)
         if (existingKey) {

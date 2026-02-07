@@ -1,10 +1,10 @@
 # Multi-Agent Architecture
 
-This document defines the structure and responsibilities of ValarMind's specialized agents, a multi-agent system for software development.
+This document defines the structure and responsibilities of ValarMind Code's specialized agents, a multi-agent system for software development.
 
 ## Overview
 
-ValarMind uses a hierarchical orchestration model where a main agent (Orchestrator) coordinates specialist agents. Each agent has a limited scope, specific tools, and clear objectives.
+ValarMind Code uses a hierarchical orchestration model where a main agent (Orchestrator) coordinates specialist agents. Each agent has a limited scope, specific tools, and clear objectives.
 
 ```mermaid
 flowchart TD

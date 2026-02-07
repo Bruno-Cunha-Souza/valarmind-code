@@ -47,7 +47,7 @@ export class MCPManager {
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
                 const transport = this.createTransport(config)
-                const client = new Client({ name: 'valarmind', version: '1.0.0' })
+                const client = new Client({ name: 'valarmind-code', version: '1.0.0' })
 
                 await client.connect(transport)
 

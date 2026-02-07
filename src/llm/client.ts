@@ -11,7 +11,7 @@ export function createLLMClient(config: ResolvedConfig, logger: Logger, tracer: 
         baseURL: config.baseURL,
         defaultHeaders: {
             'HTTP-Referer': 'https://github.com/valarmind/valarmind',
-            'X-Title': 'ValarMind CLI',
+            'X-Title': 'ValarMind Code CLI',
         },
     })
 

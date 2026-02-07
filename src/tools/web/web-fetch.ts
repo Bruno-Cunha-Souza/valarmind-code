@@ -59,7 +59,7 @@ export const webFetchTool: Tool<WebFetchInput, string> = {
         if (cached) return cached
 
         const response = await fetch(input.url, {
-            headers: { 'User-Agent': 'ValarMind/1.0 (Research Agent)' },
+            headers: { 'User-Agent': 'ValarMindCode/1.0 (Research Agent)' },
             signal: AbortSignal.timeout(15000),
         })
 
