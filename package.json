@@ -4,7 +4,7 @@
   "description": "CLI multi-agente para desenvolvimento de software",
   "type": "module",
   "bin": {
-    "valarmind": "./src/index.ts"
+    "valarmind-code": "./src/index.ts"
   },
   "scripts": {
     "dev": "bun run src/index.ts",
