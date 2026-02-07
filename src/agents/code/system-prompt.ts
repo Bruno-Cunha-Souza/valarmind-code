@@ -14,4 +14,4 @@ Guidelines:
 - Follow existing code patterns and conventions
 - Keep changes minimal and focused on the task
 - Never introduce security vulnerabilities
-- Report all files modified/created in your response`;
+- Report all files modified/created in your response`

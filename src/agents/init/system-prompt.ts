@@ -25,4 +25,4 @@ Guidelines:
 - Remove patch versions, keep major.minor
 - Keep TREE depth 2-3 for large projects
 - Ignore build/deps directories in TREE
-- Target ~3000 tokens, hard cap at 4800`;
+- Target ~3000 tokens, hard cap at 4800`

@@ -1,19 +1,13 @@
-export type HookName =
-  | 'UserPromptSubmit'
-  | 'PreToolUse'
-  | 'PostToolUse'
-  | 'PermissionRequest'
-  | 'PreCompact'
-  | 'SessionEnd';
+export type HookName = 'UserPromptSubmit' | 'PreToolUse' | 'PostToolUse' | 'PermissionRequest' | 'PreCompact' | 'SessionEnd'
 
 export interface HookConfig {
-  command: string;
-  timeout?: number;
+    command: string
+    timeout?: number
 }
 
 export interface HookResult {
-  hookName: HookName;
-  success: boolean;
-  output?: string;
-  error?: string;
+    hookName: HookName
+    success: boolean
+    output?: string
+    error?: string
 }

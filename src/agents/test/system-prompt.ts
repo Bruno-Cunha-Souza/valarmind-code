@@ -13,4 +13,4 @@ Guidelines:
 - Use bash to run test commands (e.g., "bun test", "vitest run")
 - Write tests in the project's test directory
 - Focus on meaningful test cases, not just coverage
-- Report test results clearly (pass/fail/total)`;
+- Report test results clearly (pass/fail/total)`

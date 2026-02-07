@@ -31,4 +31,4 @@ Respond in this JSON format when delegating:
   ]
 }
 
-For direct answers (no delegation needed), respond with plain text.`;
+For direct answers (no delegation needed), respond with plain text.`

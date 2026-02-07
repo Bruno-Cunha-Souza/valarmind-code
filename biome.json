@@ -1,38 +1,78 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineWidth": 100
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "complexity": {
-        "noExcessiveCognitiveComplexity": "warn"
-      },
-      "style": {
-        "noNonNullAssertion": "warn",
-        "useConst": "error"
-      },
-      "suspicious": {
-        "noExplicitAny": "warn"
-      }
-    }
-  },
-  "javascript": {
+    "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
     "formatter": {
-      "quoteStyle": "single",
-      "semicolons": "always",
-      "trailingCommas": "all"
+        "indentStyle": "space",
+        "lineWidth": 160,
+        "indentWidth": 4
+    },
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on"
+            }
+        }
+    },
+    "javascript": {
+        "formatter": {
+            "arrowParentheses": "always",
+            "quoteStyle": "single",
+            "jsxQuoteStyle": "double",
+            "semicolons": "asNeeded",
+            "trailingCommas": "es5"
+        }
+    },
+    "json": {
+        "formatter": {
+            "enabled": false
+        }
+    },
+    "css": {
+        "linter": {
+            "enabled": false
+        }
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true,
+            "suspicious": {
+                "noExplicitAny": "off",
+                "noArrayIndexKey": "off",
+                "noDuplicateCustomProperties": { "level": "warn" }
+            },
+            "a11y": {
+                "noSvgWithoutTitle": { "level": "warn" },
+                "useSemanticElements": { "level": "warn" },
+                "useKeyWithClickEvents": { "level": "warn" }
+            },
+            "complexity": {
+                "noImportantStyles": { "level": "warn" },
+                "noBannedTypes": { "level": "warn" },
+                "useOptionalChain": { "level": "warn" },
+                "useLiteralKeys": { "level": "warn" }
+            },
+            "correctness": {
+                "noUnusedVariables": {
+                    "level": "warn",
+                    "options": { "ignoreRestSiblings": true }
+                },
+                "noUnusedImports": { "level": "warn" },
+                "noUnusedFunctionParameters": { "level": "warn" }
+            },
+            "style": {
+                "noNonNullAssertion": "off"
+            }
+        }
+    },
+    "files": {
+        "includes": [
+            "**",
+            "!**/dist",
+            "!**/*.generated.js",
+            "!**/node_modules",
+            "!**/public",
+            "!**/.valarmind",
+            "!**/coverage"
+        ]
     }
-  },
-  "files": {
-    "ignore": ["node_modules", "dist", "coverage", ".valarmind"]
-  }
 }

@@ -13,4 +13,4 @@ Guidelines:
 - Always include file paths in your findings
 - Summarize what you found concisely
 - If you can't find something, say so clearly
-- Never modify files - you are read-only`;
+- Never modify files - you are read-only`

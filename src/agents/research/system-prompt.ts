@@ -13,4 +13,4 @@ Guidelines:
 - Cross-reference multiple sources
 - Provide clear citations with URLs
 - Summarize findings concisely for other agents
-- Focus on practical, actionable information`;
+- Focus on practical, actionable information`
