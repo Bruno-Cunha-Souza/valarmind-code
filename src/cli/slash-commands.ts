@@ -1,6 +1,11 @@
+import * as clack from '@clack/prompts'
 import { execaCommand } from 'execa'
-import { getModelLabel } from '../config/defaults.js'
+import { saveCredentials } from '../auth/credentials.js'
+import { maskApiKey } from '../auth/credentials.js'
+import { AVAILABLE_MODELS, MODEL_ALIASES, getModelLabel } from '../config/defaults.js'
+import { saveGlobalConfig } from '../config/persistence.js'
 import type { Container } from '../core/container.js'
+import { askApiKey, askModel } from './prompts.js'
 import { colors } from './ui.js'
 
 interface SlashCommand {
@@ -176,6 +181,79 @@ const commands: SlashCommand[] = [
         },
     },
     {
+        name: '/model',
+        description: 'Switch model',
+        handler: async (container, args) => {
+            const arg = args.trim()
+
+            // /model list — text list
+            if (arg === 'list') {
+                const lines = AVAILABLE_MODELS.map((m) => {
+                    const current = m.id === container.config.model ? ' \u2713' : ''
+                    return `  ${m.label}${current}  ${colors.dim(m.id)}  ${colors.dim(m.description)}`
+                })
+                return lines.join('\n')
+            }
+
+            let selectedModel: string | null = null
+
+            if (arg) {
+                // /model <alias> or /model <full-id>
+                const resolved = MODEL_ALIASES[arg.toLowerCase()] ?? arg
+                const valid = AVAILABLE_MODELS.find((m) => m.id === resolved)
+                if (!valid) {
+                    const aliases = Object.keys(MODEL_ALIASES).join(', ')
+                    return `Unknown model "${arg}". Available aliases: ${aliases}\nOr use a full model ID.`
+                }
+                selectedModel = resolved
+            } else {
+                // /model — interactive select
+                selectedModel = await askModel(container.config.model)
+                if (!selectedModel) return 'Cancelled.'
+            }
+
+            // Persist + mutate
+            await saveGlobalConfig(container.fs, { model: selectedModel })
+            container.config.model = selectedModel
+
+            return `Model switched to ${getModelLabel(selectedModel)} (${selectedModel})`
+        },
+    },
+    {
+        name: '/settings',
+        description: 'Edit settings',
+        handler: async (container, args) => {
+            const settingsDef = buildSettingsDef(container)
+            const arg = args.trim().toLowerCase()
+
+            if (arg) {
+                // Direct jump: /settings model, /settings key, /settings temp, etc.
+                const entry = settingsDef.find((s) => s.key === arg || s.aliases?.includes(arg))
+                if (!entry) {
+                    const keys = settingsDef.map((s) => s.key).join(', ')
+                    return `Unknown setting "${arg}". Available: ${keys}`
+                }
+                return editSetting(entry, container)
+            }
+
+            // Interactive: show all settings
+            const result = await clack.select({
+                message: 'Configure ValarMind preferences',
+                options: settingsDef.map((s) => ({
+                    value: s.key,
+                    label: s.label,
+                    hint: s.display(),
+                })),
+            })
+
+            if (clack.isCancel(result)) return 'Cancelled.'
+
+            const selected = result as string
+            const entry = settingsDef.find((s) => s.key === selected)!
+            return editSetting(entry, container)
+        },
+    },
+    {
         name: '/exit',
         description: 'Sai do REPL',
         handler: async () => {
@@ -183,6 +261,150 @@ const commands: SlashCommand[] = [
         },
     },
 ]
+
+interface SettingDef {
+    key: string
+    label: string
+    aliases?: string[]
+    display: () => string
+    edit: () => Promise<string | null>
+}
+
+function buildSettingsDef(container: Container): SettingDef[] {
+    const cfg = container.config
+    return [
+        {
+            key: 'model',
+            label: 'Model',
+            display: () => getModelLabel(cfg.model),
+            edit: async () => {
+                const selected = await askModel(cfg.model)
+                if (!selected) return null
+                await saveGlobalConfig(container.fs, { model: selected })
+                cfg.model = selected
+                return `Model set to ${getModelLabel(selected)} (${selected})`
+            },
+        },
+        {
+            key: 'key',
+            label: 'API Key',
+            aliases: ['apikey', 'api-key'],
+            display: () => (cfg.apiKey ? maskApiKey(cfg.apiKey) : 'not set'),
+            edit: async () => {
+                const key = await askApiKey()
+                if (!key) return null
+                await saveCredentials(container.fs, key)
+                cfg.apiKey = key
+                return `API key updated (${maskApiKey(key)})`
+            },
+        },
+        {
+            key: 'temperature',
+            label: 'Temperature',
+            aliases: ['temp'],
+            display: () => String(cfg.temperature),
+            edit: async () => {
+                const result = await clack.text({
+                    message: 'Temperature (0-2)',
+                    defaultValue: String(cfg.temperature),
+                    validate(value) {
+                        const n = Number(value)
+                        if (Number.isNaN(n) || n < 0 || n > 2) return 'Must be a number between 0 and 2'
+                    },
+                })
+                if (clack.isCancel(result)) return null
+                const val = Number(result)
+                await saveGlobalConfig(container.fs, { temperature: val })
+                cfg.temperature = val
+                return `Temperature set to ${val}`
+            },
+        },
+        {
+            key: 'maxtokens',
+            label: 'Max Tokens',
+            aliases: ['tokens', 'max-tokens'],
+            display: () => String(cfg.maxTokens),
+            edit: async () => {
+                const result = await clack.text({
+                    message: 'Max tokens (positive integer)',
+                    defaultValue: String(cfg.maxTokens),
+                    validate(value) {
+                        const n = Number(value)
+                        if (!Number.isInteger(n) || n <= 0) return 'Must be a positive integer'
+                    },
+                })
+                if (clack.isCancel(result)) return null
+                const val = Number(result)
+                await saveGlobalConfig(container.fs, { maxTokens: val })
+                cfg.maxTokens = val
+                return `Max tokens set to ${val}`
+            },
+        },
+        {
+            key: 'loglevel',
+            label: 'Log Level',
+            aliases: ['log', 'log-level'],
+            display: () => cfg.logLevel,
+            edit: async () => {
+                const levels = ['silent', 'error', 'warn', 'info', 'debug'] as const
+                const result = await clack.select({
+                    message: 'Log level',
+                    options: levels.map((l) => ({
+                        value: l,
+                        label: l === cfg.logLevel ? `${l} \u2713` : l,
+                    })),
+                })
+                if (clack.isCancel(result)) return null
+                const val = result as typeof cfg.logLevel
+                await saveGlobalConfig(container.fs, { logLevel: val })
+                cfg.logLevel = val
+                return `Log level set to ${val}`
+            },
+        },
+        {
+            key: 'permission',
+            label: 'Permission Mode',
+            aliases: ['permissions', 'permission-mode'],
+            display: () => cfg.permissionMode,
+            edit: async () => {
+                const modes = ['auto', 'suggest', 'ask'] as const
+                const result = await clack.select({
+                    message: 'Permission mode',
+                    options: modes.map((m) => ({
+                        value: m,
+                        label: m === cfg.permissionMode ? `${m} \u2713` : m,
+                    })),
+                })
+                if (clack.isCancel(result)) return null
+                const val = result as typeof cfg.permissionMode
+                await saveGlobalConfig(container.fs, { permissionMode: val })
+                cfg.permissionMode = val
+                return `Permission mode set to ${val}`
+            },
+        },
+        {
+            key: 'planmode',
+            label: 'Plan Mode',
+            aliases: ['plan', 'plan-mode'],
+            display: () => String(cfg.planMode),
+            edit: async () => {
+                const result = await clack.confirm({
+                    message: 'Enable plan mode?',
+                    initialValue: cfg.planMode,
+                })
+                if (clack.isCancel(result)) return null
+                await saveGlobalConfig(container.fs, { planMode: result })
+                cfg.planMode = result
+                return `Plan mode ${result ? 'enabled' : 'disabled'}`
+            },
+        },
+    ]
+}
+
+async function editSetting(entry: SettingDef, _container: Container): Promise<string> {
+    const result = await entry.edit()
+    return result ?? 'Cancelled.'
+}
 
 export function getSlashCommands(): SlashCommand[] {
     return commands

@@ -3,15 +3,24 @@ import type { ResolvedConfig } from './schema.js'
 export interface ModelOption {
     id: string
     label: string
+    description: string
 }
 
 export const AVAILABLE_MODELS: ModelOption[] = [
-    { id: 'anthropic/claude-opus-4.6', label: 'Claude Opus 4.6' },
-    { id: 'anthropic/claude-opus-4.5', label: 'Claude Opus 4.5' },
-    { id: 'anthropic/claude-sonnet-4.5', label: 'Claude Sonnet 4.5' },
-    { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-    { id: 'openai/gpt-5.2-codex', label: 'GPT 5.2 Codex' },
+    { id: 'anthropic/claude-opus-4.6', label: 'Claude Opus 4.6', description: 'Most capable for complex work' },
+    { id: 'anthropic/claude-opus-4.5', label: 'Claude Opus 4.5', description: 'Strong reasoning and analysis' },
+    { id: 'anthropic/claude-sonnet-4.5', label: 'Claude Sonnet 4.5', description: 'Best for everyday tasks' },
+    { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Fast and cost-effective' },
+    { id: 'openai/gpt-5.2-codex', label: 'GPT 5.2 Codex', description: 'Specialized for code generation' },
 ]
+
+export const MODEL_ALIASES: Record<string, string> = {
+    opus: 'anthropic/claude-opus-4.6',
+    'opus4.5': 'anthropic/claude-opus-4.5',
+    sonnet: 'anthropic/claude-sonnet-4.5',
+    gemini: 'google/gemini-2.5-flash',
+    gpt: 'openai/gpt-5.2-codex',
+}
 
 export function getModelLabel(modelId: string): string {
     return AVAILABLE_MODELS.find((m) => m.id === modelId)?.label ?? modelId

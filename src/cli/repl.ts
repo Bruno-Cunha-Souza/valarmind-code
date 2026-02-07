@@ -50,8 +50,15 @@ export async function startREPL(container: Container): Promise<void> {
                     progress.dispose()
                 }
             } else {
+                const isInteractive = ['/model', '/settings'].includes(cmdName!)
                 const result = await handleSlashCommand(text, container)
                 if (result !== null) {
+                    if (isInteractive) {
+                        console.clear()
+                        console.log(banner())
+                        console.log(colors.dim(`Model: ${getModelLabel(container.config.model)}`))
+                        console.log(colors.dim('Type /help for commands, /exit to quit\n'))
+                    }
                     console.log(result)
                 } else {
                     console.log(formatError(`Comando desconhecido: ${text}`))
