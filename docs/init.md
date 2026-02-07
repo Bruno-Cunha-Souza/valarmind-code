@@ -179,7 +179,7 @@ Request → Route (validates) → Service (processes) → Repository (persists) 
 
 ### Tests
 
-- Framework: Vitest
+- Framework: Bun Test
 - E2E: Supertest + testcontainers
 - Coverage: minimum 80%
 

@@ -1,81 +1,81 @@
 # ValarMind
 
-CLI multi-agente para desenvolvimento de software, inspirada no Claude Code CLI e Codex CLI. Cada etapa do processo de desenvolvimento é tratada por um agente especialista.
+Multi-agent CLI for software development, inspired by Claude Code CLI and Codex CLI. Each step of the development process is handled by a specialist agent.
 
-> **Status:** Fase 1+2 implementada — Foundation + Core Agents funcionais.
+> **Status:** Phase 1+2 implemented — Foundation + Core Agents functional.
 
 ## Features
 
-- **9 Agentes Especialistas** - Orchestrator, Search, Research, Code, Review, Test, Docs, QA, Init
-- **Orquestração Hierárquica** - Orchestrator coordena agentes com permissões e ferramentas específicas
-- **Quality Gates Automáticos** - Review e QA obrigatórios para código de risco
-- **Memória Local** - Curto prazo (sessão) e médio prazo (VALARMIND.md, state.json)
-- **Compactação TOON** - Até 40% economia de tokens
-- **Plugins Híbridos** - MCP para ferramentas externas + plugins nativos para integração profunda
-- **OpenRouter** - Acesso a múltiplos modelos (OpenAI, Anthropic, Google) com uma API key
+- **9 Specialist Agents** - Orchestrator, Search, Research, Code, Review, Test, Docs, QA, Init
+- **Hierarchical Orchestration** - Orchestrator coordinates agents with specific permissions and tools
+- **Automatic Quality Gates** - Review and QA required for risky code
+- **Local Memory** - Short-term (session) and medium-term (VALARMIND.md, state.json)
+- **TOON Compaction** - Up to 40% token savings
+- **Hybrid Plugins** - MCP for external tools + native plugins for deep integration
+- **OpenRouter** - Access to multiple models (OpenAI, Anthropic, Google) with a single API key
 
-## Arquitetura de Agentes
+## Agent Architecture
 
-| Agente | Permissões | Responsabilidade |
-|--------|------------|------------------|
-| **Orchestrator** | Read, Spawn | Coordena agentes, cria planos, gerencia todo-list |
-| **Search** | Read only | Descoberta e exploração de codebase |
-| **Research** | Read, Web | Pesquisa externa (docs, CVEs, best practices) |
-| **Code** | Read, Write | Implementação e modificação de código |
-| **Review** | Read only | Code review, segurança, performance |
-| **Test** | Read, Write, Execute | Execução e criação de testes |
-| **Docs** | Read, Write | Documentação e ADRs |
-| **QA** | Read, Execute | Validação de qualidade e build |
-| **Init** | Read, Write | Geração de VALARMIND.md |
+| Agent            | Permissions          | Responsibility                                    |
+| ---------------- | -------------------- | ------------------------------------------------- |
+| **Orchestrator** | Read, Spawn          | Coordinates agents, creates plans, manages tasks  |
+| **Search**       | Read only            | Codebase discovery and exploration                |
+| **Research**     | Read, Web            | External research (docs, CVEs, best practices)    |
+| **Code**         | Read, Write          | Code implementation and modification              |
+| **Review**       | Read only            | Code review, security, performance                |
+| **Test**         | Read, Write, Execute | Test execution and creation                       |
+| **Docs**         | Read, Write          | Documentation and ADRs                            |
+| **QA**           | Read, Execute        | Quality validation and build                      |
+| **Init**         | Read, Write          | VALARMIND.md generation                           |
 
 ## CLI
 
 ```bash
-# Instalação
+# Install
 bun install -g valarmind
 
-# Modo interativo
+# Interactive mode
 valarmind
 
-# Prompt único
+# Single prompt
 valarmind -p "Add logout button to navbar"
 
-# Plan mode (sem execução)
+# Plan mode (no execution)
 valarmind --plan -p "Implement user settings"
 
-# Auto-approve em sandbox
+# Auto-approve in sandbox
 valarmind -y --sandbox -p "Run tests and fix failures"
 ```
 
-### Comandos
+### Commands
 
-| Comando | Descrição |
-|---------|-----------|
-| `valarmind` | Inicia REPL interativo |
-| `valarmind init` | Gera VALARMIND.md |
-| `valarmind auth` | Configura autenticação OpenRouter |
-| `valarmind config` | Gerencia configuração |
-| `valarmind doctor` | Diagnóstico do ambiente |
+| Command            | Description                    |
+| ------------------ | ------------------------------ |
+| `valarmind`        | Start interactive REPL         |
+| `valarmind init`   | Generate VALARMIND.md          |
+| `valarmind auth`   | Configure OpenRouter auth      |
+| `valarmind config` | Manage configuration           |
+| `valarmind doctor` | Environment diagnostics        |
 
 ### Slash Commands (REPL)
 
 `/init` `/compact` `/clear` `/help` `/status` `/plan` `/approve` `/reject` `/undo` `/diff` `/commit` `/agents` `/tasks`
 
-## Configuração
+## Configuration
 
 ```
 ~/.config/valarmind/
 ├── credentials.json     # API key (chmod 600)
-└── config.json          # Preferências
+└── config.json          # User preferences
 
-<projeto>/
-├── VALARMIND.md         # Instruções do projeto (versionado)
-├── VALARMIND.local.md   # Preferências locais (gitignored)
+<project>/
+├── VALARMIND.md         # Project instructions (versioned)
+├── VALARMIND.local.md   # Local preferences (gitignored)
 └── .valarmind/
-    ├── config.json      # Config do projeto
+    ├── config.json      # Project config
     └── memory/
-        ├── state.json   # Estado operacional
-        └── state.toon   # Versão compacta
+        ├── state.json   # Operational state
+        └── state.toon   # Compact version
 ```
 
 ## Plugins
@@ -84,86 +84,91 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 
 ```json
 {
-  "mcp": {
-    "servers": {
-      "postgres": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-postgres"],
-        "env": { "DATABASE_URL": "${DATABASE_URL}" }
-      }
+    "mcp": {
+        "servers": {
+            "postgres": {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-postgres"],
+                "env": { "DATABASE_URL": "${DATABASE_URL}" }
+            }
+        }
     }
-  }
 }
 ```
 
-### Tipos de Plugin Nativo
+### Native Plugin Types
 
-| Tipo | Uso |
-|------|-----|
-| Agent Plugin | Agentes especializados (Terraform, K8s) |
-| Provider Plugin | LLM providers alternativos (Ollama) |
-| Hook Plugin | Extensão do ciclo de vida (audit, CI/CD) |
-| Formatter Plugin | Formatos de output (JUnit XML) |
+| Type             | Use                                       |
+| ---------------- | ----------------------------------------- |
+| Agent Plugin     | Domain-specific agents (Terraform, K8s)   |
+| Provider Plugin  | Alternative LLM providers (Ollama)        |
+| Hook Plugin      | Lifecycle extensions (audit, CI/CD)       |
+| Formatter Plugin | Output formats (JUnit XML)                |
 
-## Documentação
+## Documentation
 
-| Documento | Conteúdo |
-|-----------|----------|
-| [docs/agents.md](docs/agents.md) | Arquitetura de 9 agentes especialistas |
-| [docs/general.md](docs/general.md) | Workflow e agentic loop |
-| [docs/memory.md](docs/memory.md) | Memória local e formato TOON |
-| [docs/init.md](docs/init.md) | Geração de VALARMIND.md |
-| [docs/cli.md](docs/cli.md) | Comandos, opções e hooks da CLI |
-| [docs/plugins.md](docs/plugins.md) | Sistema de plugins MCP e nativos |
-| [docs/architecture.md](docs/architecture.md) | Arquitetura técnica e decisões (ADR) |
+| Document                                     | Contents                          |
+| -------------------------------------------- | --------------------------------- |
+| [docs/agents.md](docs/agents.md)             | 9 specialist agents architecture  |
+| [docs/general.md](docs/general.md)           | Workflow and agentic loop         |
+| [docs/memory.md](docs/memory.md)             | Local memory and TOON format      |
+| [docs/init.md](docs/init.md)                 | VALARMIND.md generation           |
+| [docs/cli.md](docs/cli.md)                   | Commands, options and CLI hooks   |
+| [docs/plugins.md](docs/plugins.md)           | MCP and native plugin system      |
+| [docs/architecture.md](docs/architecture.md) | Technical architecture and ADRs   |
 
 ## Stack
 
-| Tecnologia | Uso |
-|------------|-----|
-| TypeScript | Linguagem |
-| Bun | Runtime |
-| OpenRouter API | Provider de modelos |
-| Zod | Validação de schemas |
-| Commander.js | CLI parsing |
-| @toon-format/toon | Compactação de prompts |
-| @modelcontextprotocol/sdk | Cliente MCP |
-| Biome | Formatting e linting |
-| Vitest | Testes |
-| Pino | Logging |
-| Execa | Execução de comandos |
+| Technology                | Use                  |
+| ------------------------- | -------------------- |
+| TypeScript                | Language             |
+| Bun                       | Runtime              |
+| OpenRouter API            | Model provider       |
+| Zod                       | Schema validation    |
+| Commander.js              | CLI parsing          |
+| @toon-format/toon         | Prompt compaction    |
+| @modelcontextprotocol/sdk | MCP client           |
+| Biome                     | Formatting & linting |
+| Bun Test                  | Testing              |
+| Pino                      | Logging              |
+| Execa                     | Command execution    |
 
 ## Roadmap
 
-### Fase 1: Foundation
-- [ ] Interfaces TypeScript para agentes
-- [ ] Protocolo de comunicação inter-agentes
-- [ ] Orchestrator básico com todo-list
-- [ ] Estrutura `.valarmind/memory/`
+### Phase 1: Foundation
 
-### Fase 2: Core Agents
-- [ ] Search Agent
-- [ ] Research Agent
-- [ ] Init Agent
-- [ ] Code Agent
-- [ ] Test Agent
+- [x] TypeScript interfaces for agents
+- [x] Inter-agent communication protocol
+- [x] Basic Orchestrator with todo-list
+- [x] `.valarmind/memory/` structure
 
-### Fase 3: Quality Agents
+### Phase 2: Core Agents
+
+- [x] Search Agent
+- [x] Research Agent
+- [x] Init Agent
+- [x] Code Agent
+- [x] Test Agent
+
+### Phase 3: Quality Agents
+
 - [ ] Review Agent
 - [ ] QA Agent
 - [ ] Docs Agent
 
-### Fase 4: Integration
-- [ ] Agentic loop completo
-- [ ] Prompt assembly com token budget
-- [ ] Compactação TOON
+### Phase 4: Integration
 
-### Fase 5: Plugins
+- [ ] Full agentic loop
+- [ ] Prompt assembly with token budget
+- [ ] TOON compaction
+
+### Phase 5: Plugins
+
 - [ ] MCP Manager
 - [ ] Plugin Manager
-- [ ] Segurança e sandboxing
+- [ ] Security and sandboxing
 
-## Referências
+## References
 
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [TOON Format](https://github.com/toon-format/toon)

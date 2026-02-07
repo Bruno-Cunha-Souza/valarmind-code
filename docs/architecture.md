@@ -17,7 +17,7 @@ User → CLI → Bootstrap → Orchestrator → Agent(s) → Tools → Result �
 | DI | Composition root manual | Sem framework, `createContainer()` (Aider, Codex CLI) |
 | Comunicação | Chamadas diretas + EventBus tipado | Diretas para fluxo principal, eventos para cross-cutting |
 | File I/O | Bun.file() via abstração | FileSystem interface para testabilidade |
-| Testes | Vitest no Bun | Melhor ecossistema de testes + Bun runtime |
+| Testes | Bun Test (nativo) | Runtime nativo, zero dependências extras |
 | Tool errors | Retornados como texto ao LLM | Nunca lançam exceção (OpenAI Agents SDK) |
 | Timeouts | AbortController por agente | Pattern nativo, cancelamento limpo |
 | Sub-agentes | Profundidade máx 1 | Previne explosão recursiva (Claude Code, Aider) |
