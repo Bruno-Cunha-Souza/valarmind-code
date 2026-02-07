@@ -45,7 +45,7 @@ temp/
 # Agents and AI
 .claude/
 /CLAUDE.md
-/AGENTS.md
+
 
 # ValarMind specific (local preferences and operational state)
 VALARMIND.local.md
