@@ -23,25 +23,31 @@ User → CLI → Bootstrap → Orchestrator → Agent(s) → Tools → Result �
 | Sub-agentes | Profundidade máx 1 | Previne explosão recursiva (Claude Code, Aider) |
 | Tracing | Hierárquico desde dia 1 | Spans aninhados (OpenAI Agents SDK) |
 | Tools | Zod-first com .describe() | Schema → JSON Schema automático para LLM |
-| Code understanding | Tree-sitter repo map | Stateless, 200+ langs, sem server lifecycle (Aider) |
+| Code understanding | Tree-sitter repo map (WASM) | Stateless, 30+ linguagens via WASM grammars, sem server lifecycle (Aider) |
 | LSP | Não planejado (futuro via MCP) | Complexidade desproporcional ao ganho; diagnostics via bash + tree-sitter cobrem 80% |
+| MCP transport | StreamableHTTP (remoto) + stdio (local) | SSE deprecado, StreamableHTTP é o padrão oficial |
+| Sandbox | Profiles por agente, optional | Limita filesystem e network por tipo de agente |
 
 ## Estrutura de Módulos
 
 ```
 src/
-├── core/           # Tipos, errors, Result<T>, FileSystem, EventBus, Container
-├── config/         # Zod schemas, loader hierárquico, defaults
-├── logger/         # Pino setup
-├── auth/           # Credentials CRUD, API key validation
-├── tracing/        # Tracer, Span, TraceExporter
-├── llm/            # OpenAI SDK + OpenRouter, retry, circuit breaker, prompt builder
-├── permissions/    # PermissionManager, modos auto/suggest/ask
-├── tools/          # Registry, Executor, implementações (filesystem, shell, web)
-├── memory/         # StateManager, compactor TOON, session recorder, context loader
-├── agents/         # BaseAgent, AgentRunner, AgentRegistry, agentes especializados
-├── hooks/          # HookRunner (shell commands em eventos)
-└── cli/            # Commander.js, REPL, slash commands, prompts @clack
+├── core/               # Tipos, errors, Result<T>, FileSystem, EventBus, Container
+├── config/             # Zod schemas, loader hierárquico, defaults
+├── logger/             # Pino setup
+├── auth/               # Credentials CRUD, API key validation
+├── tracing/            # Tracer, Span, TraceExporter
+├── llm/                # OpenAI SDK + OpenRouter, retry, circuit breaker, prompt builder
+├── permissions/        # PermissionManager, modos auto/suggest/ask
+├── tools/              # Registry, Executor, implementações (filesystem, shell, web, code)
+├── memory/             # StateManager, compactor TOON, session recorder, context loader
+├── agents/             # BaseAgent, AgentRunner, AgentRegistry, agentes especializados
+├── hooks/              # HookRunner (shell commands em eventos)
+├── mcp/                # MCPManager, tool-bridge (stdio/StreamableHTTP)
+├── plugins/            # PluginManager (HookPlugin, AgentPlugin, ProviderPlugin)
+├── security/           # SandboxManager (profiles per agent, macOS/Linux)
+├── code-understanding/ # Tree-sitter parser, RepoMapper (WASM-based)
+└── cli/                # Commander.js, REPL, slash commands, prompts @clack
 ```
 
 ## Design Patterns
@@ -133,6 +139,13 @@ updatePlanTask(index, changes) → editar tasks antes de aprovar
 
 ```
 core → logger → config → auth → events → tracing → llm → permissions → tools → memory → agents → hooks → cli → index.ts
+                                                                    ↑
+                                                              mcp/manager
+                                                              mcp/tool-bridge
+                                                              plugins/manager
+                                                              security/sandbox
+                                                              code-understanding/parser
+                                                              code-understanding/repo-map
 ```
 
 ## Web Search
@@ -147,8 +160,8 @@ Research Agent → LLMClient.chat({ model: "modelo:online" }) → OpenRouter Web
 |---------|---------|--------|
 | Provider | OpenRouter `:online` | Zero-config, usa mesma API key, ~$0.02/busca |
 | Alternativa | Não implementada (Tavily/Brave como Layer 2 futuro) | Complexidade desnecessária para v1 |
-| Content fetch | HTTP + Turndown (HTML→Markdown) + modelo barato para resumo | Mesmo pattern do Claude Code (Haiku) |
-| Cache | TTL 15 min para páginas fetchadas | Evita re-fetch desnecessário |
+| Content fetch | HTTP + Turndown (HTML→Markdown) com cache TTL 15 min | Mesmo pattern do Claude Code; `script`/`style`/`nav` removidos |
+| Cache | TTL 15 min para páginas fetchadas, in-memory Map | Evita re-fetch desnecessário |
 
 O suffix `:online` funciona com o OpenAI SDK porque é apenas parte do string do modelo — o SDK não valida e envia as-is para o OpenRouter.
 

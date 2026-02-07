@@ -160,8 +160,9 @@ Agent specialized in codebase discovery and exploration. Read-only mode.
 | Glob | Read | Search files by pattern |
 | Grep | Read | Search content in files |
 | Read | Read | Read files |
-| LSP | Read | Symbol navigation (go to definition, references) |
 | TreeView | Read | Visualize directory structure |
+| GitDiff | Read | Analyze changes in commits/branches |
+| RepoMap | Read | Structural map of code (functions, classes, signatures) |
 
 ### Restrictions
 
@@ -210,10 +211,13 @@ Agent specialized in external internet research. Searches documentation, solutio
 
 | Tool | Permission | Usage |
 |------|------------|-------|
-| WebSearch | Read | Web search with structured queries |
-| WebFetch | Read | Access URLs and extract content |
+| WebFetch | Read | Fetch URLs and convert HTML to Markdown |
 | Read | Read | Read local files for context |
+| Glob | Read | Search files by pattern |
+| Grep | Read | Search content in files |
 | MCPTools | Read | Access external tools via MCP (docs, APIs) |
+
+> **Web Search**: The Research Agent uses the OpenRouter `:online` model suffix for automatic web grounding. Search results are included inline by the model — no separate tool is needed.
 
 ### Restrictions
 
@@ -340,7 +344,8 @@ Agent specialized in writing and modifying code.
 | Edit | Write | Edit existing files |
 | Write | Write | Create new files |
 | Glob | Read | Find related files |
-| LSP | Read | Code navigation and analysis |
+| Grep | Read | Search content in files |
+| RepoMap | Read | Structural map of code (functions, classes, signatures) |
 
 ### Restrictions
 
@@ -398,8 +403,8 @@ Agent specialized in code review and quality analysis.
 | Read | Read | Read files for analysis |
 | Glob | Read | Find related files |
 | Grep | Read | Search for problematic patterns |
-| LSP | Read | Symbol and dependency analysis |
 | GitDiff | Read | Analyze changes in commits/branches |
+| RepoMap | Read | Structural map of code (functions, classes, signatures) |
 
 ### Restrictions
 
@@ -470,6 +475,7 @@ Agent specialized in testing and validation.
 | Edit | Write | Edit existing tests |
 | Bash | Execute | Run test commands |
 | Glob | Read | Find test files |
+| Grep | Read | Search content in test/code files |
 
 ### Restrictions
 
@@ -1081,13 +1087,14 @@ The Orchestrator acts as a bridge between the main agentic loop and specialist a
 
 ### Phase 5: Web Search, Plugins & Deferred
 
-- [ ] Web search via OpenRouter `:online` suffix for Research Agent
-- [ ] Web fetch with Turndown + cheap model summarization
-- [ ] Tree-sitter repo map for structural code understanding (all agents)
-- [ ] MCP Manager (stdio/SSE transport)
-- [ ] Plugin Manager (native plugins)
-- [ ] Security and sandboxing
+- [x] Web search via OpenRouter `:online` suffix for Research Agent
+- [x] Web fetch with Turndown HTML→Markdown + 15min cache
+- [x] Tree-sitter repo map for structural code understanding (30+ languages via WASM)
+- [x] MCP Manager (stdio/StreamableHTTP transport, `mcp__server__tool` namespace)
+- [x] Plugin Manager (HookPlugin, AgentPlugin, ProviderPlugin)
+- [x] Security sandboxing (per-agent profiles, macOS sandbox-exec, Linux bubblewrap)
 
 ### Future (not planned)
 
 - LSP integration via MCP (Serena pattern — user installs language-specific MCP servers)
+- Tree-sitter Aider-style repo map with PageRank ranking

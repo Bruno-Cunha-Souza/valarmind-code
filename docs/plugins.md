@@ -90,9 +90,9 @@ flowchart TD
 
     A --> C
     B --> C
-    C -->|"stdio/SSE"| D
-    C -->|"stdio/SSE"| E
-    C -->|"stdio/SSE"| F
+    C -->|"stdio/StreamableHTTP"| D
+    C -->|"stdio/StreamableHTTP"| E
+    C -->|"stdio/StreamableHTTP"| F
 ```
 
 ### Configuration
@@ -111,7 +111,7 @@ interface MCPServerConfig {
   args?: string[];
   env?: Record<string, string>;
 
-  // Remote server via SSE
+  // Remote server via StreamableHTTP
   url?: string;
   headers?: Record<string, string>;
 
@@ -184,7 +184,7 @@ const agentMCPPermissions: Record<AgentType, string[] | '*'> = {
 // src/plugins/mcp/manager.ts
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 interface MCPTool {
   server: string;
@@ -210,7 +210,7 @@ export class MCPManager {
 
   private async connect(name: string, config: MCPServerConfig): Promise<void> {
     const transport = config.url
-      ? new SSEClientTransport(new URL(config.url), { headers: config.headers })
+      ? new StreamableHTTPClientTransport(new URL(config.url))
       : new StdioClientTransport({
           command: config.command!,
           args: config.args,
@@ -962,7 +962,7 @@ const defaultSandbox: PluginSandbox = {
 | Aspect | Implementation |
 |--------|----------------|
 | Process isolation | Each server runs in separate process |
-| Communication | JSON-RPC over stdio or SSE |
+| Communication | JSON-RPC over stdio or StreamableHTTP |
 | Permissions | Agent-level access control |
 | Resource limits | Configurable timeouts |
 | Secrets | Environment variable interpolation |
@@ -984,32 +984,35 @@ const defaultSandbox: PluginSandbox = {
 
 ### Phase 1: MCP Foundation
 
-- [ ] MCP Manager with stdio transport
-- [ ] Server configuration loading
-- [ ] Agent permission mapping
-- [ ] Tool namespacing (`server__tool`)
+- [x] MCP Manager with stdio/StreamableHTTP transport
+- [x] Server configuration loading
+- [x] Agent permission mapping
+- [x] Tool namespacing (`mcp__server__tool`)
+- [x] Tool bridge (MCP tools → native Tool interface)
 - [ ] Resource access
 
 ### Phase 2: Native Plugin System
 
-- [ ] Plugin interface definitions
-- [ ] Plugin Manager implementation
-- [ ] Agent plugin support
-- [ ] Provider plugin support
-- [ ] Hook plugin support
+- [x] Plugin interface definitions (HookPlugin, AgentPlugin, ProviderPlugin)
+- [x] Plugin Manager implementation (register, triggerHook, shutdown)
+- [x] Agent plugin support
+- [x] Provider plugin support
+- [x] Hook plugin support
 
-### Phase 3: Distribution
+### Phase 3: Security
+
+- [x] Per-agent sandbox profiles (filesystem deny/allow, network domains)
+- [x] SandboxManager (macOS sandbox-exec, Linux bubblewrap)
+- [x] Sandbox integration with bash tool
+- [ ] Permission prompts for sensitive operations
+- [ ] Audit logging
+
+### Phase 4: Distribution & Polish
 
 - [ ] npm package discovery (`valarmind-plugin-*`)
 - [ ] Local plugin loading
 - [ ] Manifest validation
 - [ ] Version compatibility checks
-
-### Phase 4: Security & Polish
-
-- [ ] Plugin sandboxing
-- [ ] Permission prompts for sensitive operations
-- [ ] Audit logging
 - [ ] Hot reload for development
 - [ ] Plugin marketplace CLI (`valarmind plugin search`)
 

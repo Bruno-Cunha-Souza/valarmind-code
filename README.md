@@ -2,7 +2,7 @@
 
 Multi-agent CLI for software development, inspired by Claude Code CLI and Codex CLI. Each step of the development process is handled by a specialist agent.
 
-> **Status:** Phase 1-4 implemented — Foundation, Core Agents, Quality Agents, and Integration functional.
+> **Status:** Phase 1-5 implemented — Foundation, Core Agents, Quality Agents, Integration, Web Search, Plugins & Sandboxing functional.
 
 ## Features
 
@@ -172,16 +172,18 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 
 ### Phase 5: Web Search, Plugins & Deferred
 
-- [ ] Web search via OpenRouter `:online` suffix (Research Agent uses `model:online` for real-time web grounding)
-- [ ] Web fetch with Turndown HTML-to-Markdown + cheap model summarization
-- [ ] Tree-sitter repo map for structural code understanding (all agents, Aider-style)
-- [ ] MCP Manager (stdio/SSE transport)
-- [ ] Plugin Manager (native plugins)
-- [ ] Security and sandboxing
+- [x] Web search via OpenRouter `:online` suffix (Research Agent uses `model:online` for real-time web grounding)
+- [x] Web fetch with Turndown HTML-to-Markdown + cache
+- [x] Tree-sitter repo map for structural code understanding (web-tree-sitter WASM)
+- [x] MCP Manager (stdio/StreamableHTTP transport)
+- [x] MCP tool bridge (namespace `mcp__server__tool`)
+- [x] Plugin Manager (HookPlugin, AgentPlugin, ProviderPlugin)
+- [x] Security sandboxing (per-agent profiles, macOS sandbox-exec, Linux bubblewrap)
 
 ### Future (not planned)
 
 - LSP integration via MCP (Serena pattern — user installs language-specific MCP servers)
+- Tree-sitter Aider-style repo map with PageRank ranking
 
 ## References
 
