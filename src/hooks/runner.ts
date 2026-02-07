@@ -1,5 +1,6 @@
 import { execaCommand } from 'execa'
 import type { ResolvedConfig } from '../config/schema.js'
+import { errorMessage } from '../core/errors.js'
 import type { TypedEventEmitter } from '../core/events.js'
 import type { Logger } from '../logger/index.js'
 import type { HookConfig, HookName, HookResult } from './types.js'
@@ -30,13 +31,14 @@ export class HookRunner {
                 results.push({ hookName, success: true, output: stdout })
                 this.logger.debug({ hookName, command: hook.command }, 'hook:success')
             } catch (error) {
+                const msg = errorMessage(error)
                 const result: HookResult = {
                     hookName,
                     success: false,
-                    error: (error as Error).message,
+                    error: msg,
                 }
                 results.push(result)
-                this.logger.warn({ hookName, error: (error as Error).message }, 'hook:error')
+                this.logger.warn({ hookName, error: msg }, 'hook:error')
             }
         }
 

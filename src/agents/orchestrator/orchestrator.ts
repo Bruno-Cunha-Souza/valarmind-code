@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { errorMessage } from '../../core/errors.js'
 import type { TypedEventEmitter } from '../../core/events.js'
 import type { AgentType } from '../../core/types.js'
 import type { ChatMessage, LLMClient } from '../../llm/types.js'
@@ -29,11 +30,18 @@ interface OrchestratorDeps {
 }
 
 export class Orchestrator {
+    private static readonly MAX_HISTORY = 50
     private taskManager = new TaskManager()
     private conversationHistory: ChatMessage[] = []
     private pendingPlan: Plan | null = null
 
     constructor(private deps: OrchestratorDeps) {}
+
+    private trimHistory(): void {
+        if (this.conversationHistory.length > Orchestrator.MAX_HISTORY) {
+            this.conversationHistory = this.conversationHistory.slice(-Orchestrator.MAX_HISTORY)
+        }
+    }
 
     async process(input: string, signal?: AbortSignal): Promise<string> {
         // Clear any stale pending plan when processing normal input
@@ -47,6 +55,7 @@ export class Orchestrator {
             const { agentContext, systemPrompt } = await this.prepareContext(sessionId, signal)
 
             this.conversationHistory.push({ role: 'user', content: input })
+            this.trimHistory()
 
             const planResponse = await this.deps.llmClient.chat({
                 messages: [{ role: 'system', content: systemPrompt }, ...this.conversationHistory],
@@ -58,6 +67,7 @@ export class Orchestrator {
             // Direct answer (no delegation)
             if (isDirectAnswer(llmOutput)) {
                 this.conversationHistory.push({ role: 'assistant', content: llmOutput })
+                this.trimHistory()
                 await this.deps.stateManager.update({ now: input })
                 this.deps.tracer.endSpan(span)
                 this.deps.tracer.endTrace()
@@ -81,6 +91,7 @@ export class Orchestrator {
             // Synthesize results
             const summary = this.synthesize(plan.plan, results)
             this.conversationHistory.push({ role: 'assistant', content: summary })
+            this.trimHistory()
 
             await this.deps.stateManager.update({ now: plan.plan, goal: input })
             this.deps.tracer.endSpan(span)
@@ -104,6 +115,7 @@ export class Orchestrator {
             const { agentContext, systemPrompt } = await this.prepareContext(sessionId, signal)
 
             this.conversationHistory.push({ role: 'user', content: input })
+            this.trimHistory()
 
             // Try streaming for a direct answer first
             const chunks: string[] = []
@@ -126,6 +138,7 @@ export class Orchestrator {
 
             if (isDirectAnswer(fullContent)) {
                 this.conversationHistory.push({ role: 'assistant', content: fullContent })
+                this.trimHistory()
                 await this.deps.stateManager.update({ now: input })
             } else {
                 // For plan-based execution, fall back to non-streaming
@@ -136,6 +149,7 @@ export class Orchestrator {
                     results.push(...gateResults)
                     const summary = this.synthesize(plan.plan, results)
                     this.conversationHistory.push({ role: 'assistant', content: summary })
+                    this.trimHistory()
                     await this.deps.stateManager.update({ now: plan.plan, goal: input })
                     yield summary
                 }
@@ -158,6 +172,7 @@ export class Orchestrator {
             const { systemPrompt } = await this.prepareContext(sessionId, signal)
 
             this.conversationHistory.push({ role: 'user', content: input })
+            this.trimHistory()
 
             const planResponse = await this.deps.llmClient.chat({
                 messages: [{ role: 'system', content: systemPrompt }, ...this.conversationHistory],
@@ -199,6 +214,7 @@ export class Orchestrator {
 
             const summary = this.synthesize(plan.plan, results)
             this.conversationHistory.push({ role: 'assistant', content: summary })
+            this.trimHistory()
             await this.deps.stateManager.update({ now: plan.plan, goal: plan.plan })
 
             this.deps.tracer.endSpan(span)
@@ -263,6 +279,7 @@ export class Orchestrator {
         const results: AgentResult[] = []
 
         while (!this.taskManager.isComplete()) {
+            if (agentContext.signal.aborted) break
             const ready = this.taskManager.getReadyTasks()
             if (ready.length === 0) break
 
@@ -297,7 +314,7 @@ export class Orchestrator {
                     this.taskManager.markCompleted(taskIndex, result.output)
                     return result
                 } catch (error) {
-                    this.taskManager.markFailed(taskIndex, (error as Error).message)
+                    this.taskManager.markFailed(taskIndex, errorMessage(error))
                     return null
                 }
             })

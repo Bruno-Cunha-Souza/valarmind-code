@@ -23,7 +23,15 @@ export abstract class BaseAgent {
         return undefined
     }
 
-    abstract buildSystemPrompt(context: AgentContext): string
+    abstract get systemPrompt(): string
+
+    buildSystemPrompt(context: AgentContext): string {
+        let prompt = this.systemPrompt
+        if (context.projectContext) {
+            prompt += `\n\n## Project Context\n${context.projectContext}`
+        }
+        return prompt
+    }
 
     formatTask(description: string, additionalContext?: Record<string, unknown>): string {
         let prompt = description

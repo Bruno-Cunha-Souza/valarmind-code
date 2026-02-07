@@ -1,4 +1,4 @@
-import { execaCommand } from 'execa'
+import { execa } from 'execa'
 import { z } from 'zod'
 import type { Tool } from '../types.js'
 
@@ -20,17 +20,20 @@ export const treeViewTool: Tool<TreeViewInput, string> = {
         const depth = input.depth ?? 3
         const ignores = input.ignorePatterns ?? ['node_modules', '.git', 'dist', 'coverage']
 
-        const ignoreFlags = ignores.map((p) => `-I "${p}"`).join(' ')
-
         try {
-            const { stdout } = await execaCommand(`tree -L ${depth} ${ignoreFlags} ${dir}`, {
-                cwd: ctx.cwd,
-            })
+            const treeArgs = ['-L', String(depth)]
+            for (const p of ignores) {
+                treeArgs.push('-I', p)
+            }
+            treeArgs.push(dir)
+            const { stdout } = await execa('tree', treeArgs, { cwd: ctx.cwd })
             return stdout
         } catch {
             // Fallback if tree is not installed: use find
-            const { stdout } = await execaCommand(`find ${dir} -maxdepth ${depth} -not -path '*/node_modules/*' -not -path '*/.git/*' | sort`, { cwd: ctx.cwd })
-            return stdout
+            const findArgs = [dir, '-maxdepth', String(depth), '-not', '-path', '*/node_modules/*', '-not', '-path', '*/.git/*']
+            const { stdout } = await execa('find', findArgs, { cwd: ctx.cwd })
+            const lines = stdout.split('\n').sort()
+            return lines.join('\n')
         }
     },
 }

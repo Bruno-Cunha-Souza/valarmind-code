@@ -38,6 +38,7 @@ export class CircuitBreaker {
     private state: CircuitState = 'closed'
     private failures = 0
     private lastFailure = 0
+    private halfOpenTrial = false
 
     constructor(
         private threshold: number = 5,
@@ -47,6 +48,10 @@ export class CircuitBreaker {
     async execute<T>(fn: () => Promise<T>): Promise<T> {
         if (this.state === 'open') {
             if (Date.now() - this.lastFailure > this.cooldownMs) {
+                if (this.halfOpenTrial) {
+                    throw new Error('Circuit breaker is open (trial in progress)')
+                }
+                this.halfOpenTrial = true
                 this.state = 'half_open'
             } else {
                 throw new Error('Circuit breaker is open')
@@ -66,9 +71,11 @@ export class CircuitBreaker {
     private onSuccess(): void {
         this.failures = 0
         this.state = 'closed'
+        this.halfOpenTrial = false
     }
 
     private onFailure(): void {
+        this.halfOpenTrial = false
         this.failures++
         this.lastFailure = Date.now()
         if (this.failures >= this.threshold) {

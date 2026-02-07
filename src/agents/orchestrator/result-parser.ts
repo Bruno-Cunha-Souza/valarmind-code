@@ -1,35 +1,42 @@
-export interface ReviewIssue {
-    file: string
-    line?: number
-    severity: 'critical' | 'major' | 'minor' | 'info'
-    category: 'security' | 'performance' | 'correctness' | 'maintenance'
-    message: string
-    suggestion?: string
-}
+import { z } from 'zod'
 
-export interface ReviewOutput {
-    filesReviewed: string[]
-    issues: ReviewIssue[]
-    overallScore: number
-    approved: boolean
-    summary: string
-}
+const ReviewIssueSchema = z.object({
+    file: z.string(),
+    line: z.number().optional(),
+    severity: z.enum(['critical', 'major', 'minor', 'info']),
+    category: z.enum(['security', 'performance', 'correctness', 'maintenance']),
+    message: z.string(),
+    suggestion: z.string().optional(),
+})
 
-export interface QACheck {
-    name: string
-    command: string
-    passed: boolean
-    output: string
-}
+const ReviewOutputSchema = z.object({
+    filesReviewed: z.array(z.string()),
+    issues: z.array(ReviewIssueSchema),
+    overallScore: z.number(),
+    approved: z.boolean(),
+    summary: z.string().optional().default(''),
+})
 
-export interface QAOutput {
-    checks: QACheck[]
-    passed: boolean
-    blockers: string[]
-    warnings: string[]
-}
+const QACheckSchema = z.object({
+    name: z.string(),
+    command: z.string(),
+    passed: z.boolean(),
+    output: z.string(),
+})
 
-function extractJSON(raw: unknown): unknown | null {
+const QAOutputSchema = z.object({
+    checks: z.array(QACheckSchema),
+    passed: z.boolean(),
+    blockers: z.array(z.string()).optional().default([]),
+    warnings: z.array(z.string()).optional().default([]),
+})
+
+export type ReviewIssue = z.infer<typeof ReviewIssueSchema>
+export type ReviewOutput = z.infer<typeof ReviewOutputSchema>
+export type QACheck = z.infer<typeof QACheckSchema>
+export type QAOutput = z.infer<typeof QAOutputSchema>
+
+export function extractJSON(raw: unknown): unknown | null {
     if (raw === null || raw === undefined) return null
     const str = typeof raw === 'string' ? raw : JSON.stringify(raw)
 
@@ -37,7 +44,7 @@ function extractJSON(raw: unknown): unknown | null {
     try {
         return JSON.parse(str)
     } catch {
-        // Fall through to regex extraction
+        // Fall through to balanced brace extraction
     }
 
     // Extract JSON from surrounding text using balanced brace matching
@@ -62,30 +69,13 @@ function extractJSON(raw: unknown): unknown | null {
 export function parseReviewOutput(raw: unknown): ReviewOutput | null {
     const parsed = extractJSON(raw)
     if (!parsed || typeof parsed !== 'object') return null
-    const obj = parsed as Record<string, unknown>
-    if (!Array.isArray(obj.filesReviewed) || !Array.isArray(obj.issues) || typeof obj.overallScore !== 'number' || typeof obj.approved !== 'boolean') {
-        return null
-    }
-    return {
-        filesReviewed: obj.filesReviewed as string[],
-        issues: obj.issues as ReviewIssue[],
-        overallScore: obj.overallScore,
-        approved: obj.approved,
-        summary: (obj.summary as string) ?? '',
-    }
+    const result = ReviewOutputSchema.safeParse(parsed)
+    return result.success ? result.data : null
 }
 
 export function parseQAOutput(raw: unknown): QAOutput | null {
     const parsed = extractJSON(raw)
     if (!parsed || typeof parsed !== 'object') return null
-    const obj = parsed as Record<string, unknown>
-    if (!Array.isArray(obj.checks) || typeof obj.passed !== 'boolean') {
-        return null
-    }
-    return {
-        checks: obj.checks as QACheck[],
-        passed: obj.passed,
-        blockers: (obj.blockers as string[]) ?? [],
-        warnings: (obj.warnings as string[]) ?? [],
-    }
+    const result = QAOutputSchema.safeParse(parsed)
+    return result.success ? result.data : null
 }

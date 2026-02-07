@@ -24,7 +24,7 @@ export class TypedEventEmitter {
         if (!this.handlers.has(event)) {
             this.handlers.set(event, new Set())
         }
-        this.handlers.get(event)!.add(handler as EventHandler<unknown>)
+        this.handlers.get(event)?.add(handler as EventHandler<unknown>)
     }
 
     off<K extends keyof EventMap>(event: K, handler: EventHandler<EventMap[K]>): void {

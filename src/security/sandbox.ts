@@ -153,7 +153,8 @@ export class SandboxManager {
             args.push('--unshare-net')
         }
 
-        args.push('--', '/bin/sh', '-c', command)
+        const escaped = command.replace(/'/g, "'\\''")
+        args.push('--', '/bin/sh', '-c', `'${escaped}'`)
         return args.join(' ')
     }
 }

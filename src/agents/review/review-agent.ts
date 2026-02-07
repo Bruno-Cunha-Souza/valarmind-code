@@ -10,11 +10,12 @@ export class ReviewAgent extends BaseAgent {
         return ['read_file', 'glob', 'grep', 'git_diff']
     }
 
+    get systemPrompt(): string {
+        return REVIEW_SYSTEM_PROMPT
+    }
+
     buildSystemPrompt(context: AgentContext): string {
-        let prompt = REVIEW_SYSTEM_PROMPT
-        if (context.projectContext) {
-            prompt += `\n\n## Project Context\n${context.projectContext}`
-        }
+        let prompt = super.buildSystemPrompt(context)
         if (context.workingState.conventions) {
             const conv = Object.entries(context.workingState.conventions)
                 .map(([k, v]) => `- ${k}: ${v}`)

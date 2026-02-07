@@ -1,3 +1,4 @@
+import { errorMessage } from '../core/errors.js'
 import type { TypedEventEmitter } from '../core/events.js'
 import type { FileSystem } from '../core/fs.js'
 import type { HookRunner } from '../hooks/runner.js'
@@ -135,10 +136,12 @@ export class AgentRunner {
                         args,
                     })
 
+                    const toolStart = Date.now()
                     const result = await this.toolExecutor.executeSafe(call.function.name, args, toolCtx, {
                         agentPermissions: agent.permissions,
                         signal: controller.signal,
                     })
+                    const toolDuration = Date.now() - toolStart
 
                     // PostToolUse hook
                     if (this.hookRunner) {
@@ -152,7 +155,7 @@ export class AgentRunner {
                     this.eventBus.emit('tool:after', {
                         toolName: call.function.name,
                         agentType: agent.type,
-                        duration: 0,
+                        duration: toolDuration,
                         success: result.ok,
                     })
 
@@ -169,14 +172,14 @@ export class AgentRunner {
             this.eventBus.emit('agent:error', {
                 agentType: agent.type,
                 taskId: task.id,
-                error: error as Error,
+                error: error instanceof Error ? error : new Error(String(error)),
             })
 
             return {
                 taskId: task.id,
                 success: false,
                 output: null,
-                summary: `Agent error: ${(error as Error).message}`,
+                summary: `Agent error: ${errorMessage(error)}`,
                 tokenUsage: { prompt: totalPromptTokens, completion: totalCompletionTokens },
             }
         }

@@ -18,10 +18,8 @@ export class SessionRecorder {
         const line = JSON.stringify(entry)
         this.buffer.push(line)
 
-        // Flush every 10 entries
-        if (this.buffer.length >= 10) {
-            await this.flush()
-        }
+        // Flush every entry to avoid data loss on shutdown
+        await this.flush()
     }
 
     async flush(): Promise<void> {

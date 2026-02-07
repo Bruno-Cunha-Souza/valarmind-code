@@ -1,3 +1,4 @@
+import { errorMessage } from '../core/errors.js'
 import type { Result } from '../core/result.js'
 import { err, ok } from '../core/result.js'
 import type { ToolPermissions } from '../core/types.js'
@@ -41,7 +42,7 @@ export class ToolExecutor {
             return ok(typeof result === 'string' ? result : JSON.stringify(result))
         } catch (error) {
             this.tracer.endSpan(span)
-            return err(`Tool '${name}' failed: ${(error as Error).message}`)
+            return err(`Tool '${name}' failed: ${errorMessage(error)}`)
         }
     }
 }

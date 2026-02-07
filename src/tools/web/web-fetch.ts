@@ -13,6 +13,7 @@ turndown.remove(['script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe'
 
 const cache = new Map<string, { content: string; timestamp: number }>()
 const CACHE_TTL = 15 * 60 * 1000
+const MAX_CACHE_SIZE = 100
 
 function getCached(url: string): string | null {
     const entry = cache.get(url)
@@ -22,6 +23,22 @@ function getCached(url: string): string | null {
         return null
     }
     return entry.content
+}
+
+function setCache(url: string, content: string): void {
+    const now = Date.now()
+    // Evict expired entries when at capacity
+    if (cache.size >= MAX_CACHE_SIZE) {
+        for (const [key, entry] of cache) {
+            if (now - entry.timestamp > CACHE_TTL) cache.delete(key)
+        }
+    }
+    // If still at capacity, remove oldest entry
+    if (cache.size >= MAX_CACHE_SIZE) {
+        const oldest = cache.keys().next().value
+        if (oldest) cache.delete(oldest)
+    }
+    cache.set(url, { content, timestamp: now })
 }
 
 const WebFetchInput = z.object({
@@ -62,11 +79,11 @@ export const webFetchTool: Tool<WebFetchInput, string> = {
             text = `${text.slice(0, maxLen)}\n\n[Content truncated at ${maxLen} chars]`
         }
 
-        cache.set(input.url, { content: text, timestamp: Date.now() })
+        setCache(input.url, text)
 
         return text
     },
 }
 
 /** Exported for testing */
-export { cache, CACHE_TTL }
+export { cache, CACHE_TTL, MAX_CACHE_SIZE }

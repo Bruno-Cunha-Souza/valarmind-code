@@ -29,6 +29,11 @@ export function classifyHttpError(status: number): ErrorKind {
     return 'permanent'
 }
 
+export function errorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message
+    return String(error)
+}
+
 export function classifyError(error: unknown): ErrorKind {
     if (error instanceof ValarMindError) return error.kind
     if (error instanceof TypeError && error.message.includes('fetch')) return 'transient'

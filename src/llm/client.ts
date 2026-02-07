@@ -87,6 +87,7 @@ export function createLLMClient(config: ResolvedConfig, logger: Logger, tracer: 
             )
 
             for await (const chunk of stream) {
+                if (params.signal?.aborted) break
                 const delta = chunk.choices[0]?.delta
                 if (!delta) continue
 

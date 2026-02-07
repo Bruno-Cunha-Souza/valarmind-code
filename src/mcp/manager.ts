@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
+import { errorMessage } from '../core/errors.js'
 import type { AgentType } from '../core/types.js'
 import type { Logger } from '../logger/index.js'
 import type { MCPServerConfig, MCPServerStatus, MCPToolInfo } from './types.js'
@@ -9,7 +10,7 @@ const MAX_RETRIES = 3
 const RETRY_BASE_MS = 1000
 
 interface ServerConnection {
-    client: Client
+    client: Client | null
     status: MCPServerStatus
     tools: MCPToolInfo[]
 }
@@ -29,14 +30,14 @@ export class MCPManager {
             try {
                 await this.connectServer(name, config)
             } catch (error) {
-                this.logger.error(`MCP server '${name}' failed to connect: ${(error as Error).message}`)
+                this.logger.error(`MCP server '${name}' failed to connect: ${errorMessage(error)}`)
             }
         }
     }
 
     async connectServer(name: string, config: MCPServerConfig): Promise<void> {
         this.connections.set(name, {
-            client: null as unknown as Client,
+            client: null,
             status: 'connecting',
             tools: [],
         })
@@ -63,7 +64,7 @@ export class MCPManager {
                 this.logger.info(`MCP server '${name}' connected with ${toolInfos.length} tools`)
                 return
             } catch (error) {
-                lastError = error as Error
+                lastError = error instanceof Error ? error : new Error(String(error))
                 if (attempt < MAX_RETRIES - 1) {
                     const delay = RETRY_BASE_MS * 2 ** attempt
                     await new Promise((r) => setTimeout(r, delay))
@@ -72,7 +73,7 @@ export class MCPManager {
         }
 
         this.connections.set(name, {
-            client: null as unknown as Client,
+            client: null,
             status: 'error',
             tools: [],
         })
@@ -133,7 +134,7 @@ export class MCPManager {
         const toolName = parts.slice(2).join('__')
         const conn = this.connections.get(serverName)
 
-        if (!conn || conn.status !== 'ready') {
+        if (!conn || conn.status !== 'ready' || !conn.client) {
             throw new Error(`MCP server not connected: ${serverName}`)
         }
 
@@ -155,7 +156,7 @@ export class MCPManager {
 
     async healthCheck(name: string): Promise<boolean> {
         const conn = this.connections.get(name)
-        if (!conn || conn.status !== 'ready') return false
+        if (!conn || conn.status !== 'ready' || !conn.client) return false
 
         try {
             await conn.client.ping()

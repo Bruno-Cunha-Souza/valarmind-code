@@ -10,8 +10,12 @@ export class InitAgent extends BaseAgent {
         return ['read_file', 'write_file', 'glob', 'grep', 'tree_view']
     }
 
+    get systemPrompt(): string {
+        return INIT_SYSTEM_PROMPT
+    }
+
     buildSystemPrompt(context: AgentContext): string {
-        let prompt = INIT_SYSTEM_PROMPT
+        let prompt = this.systemPrompt
         if (context.projectContext) {
             prompt += `\n\n## Existing Project Context\n${context.projectContext}`
         }

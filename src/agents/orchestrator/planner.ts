@@ -1,4 +1,5 @@
 import type { AgentType } from '../../core/types.js'
+import { extractJSON } from './result-parser.js'
 
 export interface PlanTask {
     agent: AgentType
@@ -13,14 +14,11 @@ export interface Plan {
 
 export function parsePlan(llmOutput: string): Plan | null {
     try {
-        // Try to extract JSON from the response
-        const jsonMatch = llmOutput.match(/\{[\s\S]*\}/)
-        if (!jsonMatch) return null
-
-        const parsed = JSON.parse(jsonMatch[0]) as Plan
-        if (!parsed.plan || !Array.isArray(parsed.tasks)) return null
-
-        return parsed
+        const parsed = extractJSON(llmOutput)
+        if (!parsed || typeof parsed !== 'object') return null
+        const obj = parsed as Record<string, unknown>
+        if (typeof obj.plan !== 'string' || !Array.isArray(obj.tasks)) return null
+        return obj as unknown as Plan
     } catch {
         return null
     }

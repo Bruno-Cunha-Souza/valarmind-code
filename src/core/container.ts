@@ -122,6 +122,8 @@ export function createContainer(config: ResolvedConfig): Container {
         async shutdown() {
             await pluginManager.shutdown()
             await mcpManager.shutdown()
+            metricsCollector.dispose()
+            eventBus.removeAll()
         },
     }
 

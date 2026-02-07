@@ -1,4 +1,4 @@
-import { execaCommand } from 'execa'
+import { execa } from 'execa'
 import { z } from 'zod'
 import type { Tool } from '../types.js'
 
@@ -23,7 +23,7 @@ export const grepTool: Tool<GrepInput, string> = {
         args.push(input.pattern, input.path ?? ctx.cwd)
 
         try {
-            const { stdout } = await execaCommand(`rg ${args.join(' ')}`, { cwd: ctx.cwd })
+            const { stdout } = await execa('rg', args, { cwd: ctx.cwd })
             return stdout || 'No matches found'
         } catch {
             return 'No matches found'

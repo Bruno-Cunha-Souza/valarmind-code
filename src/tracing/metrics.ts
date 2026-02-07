@@ -13,36 +13,52 @@ interface AgentMetrics {
 export class MetricsCollector {
     private agents = new Map<AgentType, AgentMetrics>()
     private sessionTokens = { prompt: 0, completion: 0 }
+    private cleanups: Array<() => void> = []
 
     constructor(eventBus: TypedEventEmitter) {
-        eventBus.on('agent:start', ({ agentType }) => {
+        const onStart = ({ agentType }: { agentType: AgentType }) => {
             this.ensureAgent(agentType)
             this.agents.get(agentType)!.invocations++
-        })
+        }
+        eventBus.on('agent:start', onStart)
+        this.cleanups.push(() => eventBus.off('agent:start', onStart))
 
-        eventBus.on('agent:complete', ({ agentType, duration }) => {
+        const onComplete = ({ agentType, duration }: { agentType: AgentType; duration: number }) => {
             this.ensureAgent(agentType)
             this.agents.get(agentType)!.totalDuration += duration
-        })
+        }
+        eventBus.on('agent:complete', onComplete)
+        this.cleanups.push(() => eventBus.off('agent:complete', onComplete))
 
-        eventBus.on('agent:error', ({ agentType }) => {
+        const onError = ({ agentType }: { agentType: AgentType }) => {
             this.ensureAgent(agentType)
             this.agents.get(agentType)!.errors++
-        })
+        }
+        eventBus.on('agent:error', onError)
+        this.cleanups.push(() => eventBus.off('agent:error', onError))
 
-        eventBus.on('token:usage', ({ agentType, prompt, completion }) => {
+        const onTokenUsage = ({ agentType, prompt, completion }: { agentType: AgentType; prompt: number; completion: number }) => {
             this.ensureAgent(agentType)
             const m = this.agents.get(agentType)!
             m.promptTokens += prompt
             m.completionTokens += completion
             this.sessionTokens.prompt += prompt
             this.sessionTokens.completion += completion
-        })
+        }
+        eventBus.on('token:usage', onTokenUsage)
+        this.cleanups.push(() => eventBus.off('token:usage', onTokenUsage))
 
-        eventBus.on('tool:after', ({ agentType }) => {
+        const onToolAfter = ({ agentType }: { agentType: AgentType }) => {
             this.ensureAgent(agentType)
             this.agents.get(agentType)!.toolCalls++
-        })
+        }
+        eventBus.on('tool:after', onToolAfter)
+        this.cleanups.push(() => eventBus.off('tool:after', onToolAfter))
+    }
+
+    dispose(): void {
+        for (const cleanup of this.cleanups) cleanup()
+        this.cleanups = []
     }
 
     private ensureAgent(type: AgentType): void {
