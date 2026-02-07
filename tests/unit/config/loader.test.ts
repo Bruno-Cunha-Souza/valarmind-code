@@ -19,7 +19,7 @@ describe('loadConfig', () => {
     it('returns defaults when no config files exist', async () => {
         const fs = new MockFileSystem()
         const config = await loadConfig({ fs })
-        expect(config.model).toBe('anthropic/claude-sonnet-4-20250514')
+        expect(config.model).toBe('anthropic/claude-sonnet-4.5')
         expect(config.temperature).toBe(0)
         expect(config.logLevel).toBe('info')
         expect(config.apiKey).toBe('')

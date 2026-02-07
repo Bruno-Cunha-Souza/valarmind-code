@@ -1,14 +1,66 @@
+import * as clack from '@clack/prompts'
 import { Command } from 'commander'
-import { loadCredentials } from '../auth/credentials.js'
+import { loadCredentials, saveCredentials } from '../auth/credentials.js'
+import { validateApiKey } from '../auth/validator.js'
+import { CONFIG_DIR, GLOBAL_CONFIG_FILE } from '../config/defaults.js'
 import { loadConfig } from '../config/loader.js'
 import { createContainer } from '../core/container.js'
 import { BunFileSystem } from '../core/fs.js'
+import type { FileSystem } from '../core/fs.js'
 import { authCommand } from './commands/auth.js'
 import { configCommand } from './commands/config-cmd.js'
 import { doctorCommand } from './commands/doctor.js'
 import { initCommand } from './commands/init-cmd.js'
+import { askApiKey, askModel } from './prompts.js'
 import { startREPL } from './repl.js'
-import { formatError } from './ui.js'
+import { colors, formatError } from './ui.js'
+
+interface SetupResult {
+    apiKey: string
+    model?: string
+}
+
+/**
+ * Fluxo interativo de primeiro uso: solicita API key, valida, escolhe modelo e salva.
+ */
+async function setupFirstUse(fs: FileSystem): Promise<SetupResult | null> {
+    clack.intro(colors.brand('ValarMind Code — Setup Inicial'))
+
+    console.log(colors.dim('Nenhuma API key encontrada. Vamos configurar!'))
+    console.log(colors.dim('Você precisa de uma API key do OpenRouter (https://openrouter.ai/keys)\n'))
+
+    const apiKey = await askApiKey()
+    if (!apiKey) {
+        clack.outro(colors.warn('Setup cancelado. Execute novamente quando tiver sua API key.'))
+        return null
+    }
+
+    const spinner = clack.spinner()
+    spinner.start('Validando API key...')
+
+    const result = await validateApiKey(apiKey)
+    if (!result.ok) {
+        spinner.stop(colors.error('Key inválida'))
+        console.log(colors.error(result.error))
+        console.log(colors.dim('\nVerifique sua key e tente novamente.'))
+        return null
+    }
+
+    spinner.stop(colors.success(`Key válida — ${result.value.length} modelos disponíveis`))
+
+    await saveCredentials(fs, apiKey)
+
+    // Seleção de modelo
+    const model = await askModel()
+    if (model) {
+        await fs.mkdir(CONFIG_DIR)
+        await fs.writeJSON(GLOBAL_CONFIG_FILE, { model })
+    }
+
+    clack.outro(colors.success('Setup concluído!'))
+
+    return { apiKey, model: model ?? undefined }
+}
 
 export function createProgram(): Command {
     const program = new Command()
@@ -31,7 +83,7 @@ export function createProgram(): Command {
                 // Load API key from credentials if not provided
                 const credKey = await loadCredentials(fs)
 
-                const config = await loadConfig({
+                let config = await loadConfig({
                     fs,
                     cliFlags: {
                         model: options.model,
@@ -42,8 +94,11 @@ export function createProgram(): Command {
                 })
 
                 if (!config.apiKey) {
-                    console.log(formatError('API key não configurada. Execute: valarmind auth'))
-                    process.exit(1)
+                    const setup = await setupFirstUse(fs)
+                    if (!setup) process.exit(1)
+                    config = { ...config, apiKey: setup.apiKey }
+                    if (setup.model) config = { ...config, model: setup.model }
+                    console.clear()
                 }
 
                 const container = createContainer(config)
@@ -77,10 +132,13 @@ export function createProgram(): Command {
         .action(async () => {
             const fs = new BunFileSystem()
             const credKey = await loadCredentials(fs)
-            const config = await loadConfig({ fs, cliFlags: { apiKey: credKey ?? undefined } })
+            let config = await loadConfig({ fs, cliFlags: { apiKey: credKey ?? undefined } })
             if (!config.apiKey) {
-                console.log(formatError('API key não configurada. Execute: valarmind auth'))
-                process.exit(1)
+                const setup = await setupFirstUse(fs)
+                if (!setup) process.exit(1)
+                config = { ...config, apiKey: setup.apiKey }
+                if (setup.model) config = { ...config, model: setup.model }
+                console.clear()
             }
             const container = createContainer(config)
             await initCommand(container)

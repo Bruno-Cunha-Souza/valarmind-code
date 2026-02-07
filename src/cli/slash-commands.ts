@@ -1,4 +1,5 @@
 import { execaCommand } from 'execa'
+import { getModelLabel } from '../config/defaults.js'
 import type { Container } from '../core/container.js'
 import { colors } from './ui.js'
 
@@ -23,7 +24,7 @@ const commands: SlashCommand[] = [
         handler: async (container) => {
             const state = await container.stateManager.load()
             const parts: string[] = []
-            parts.push(`Model: ${container.config.model}`)
+            parts.push(`Model: ${getModelLabel(container.config.model)}`)
             if (state.goal) parts.push(`Goal: ${state.goal}`)
             if (state.now) parts.push(`Now: ${state.now}`)
             parts.push(`Open tasks: ${state.tasks_open.filter((t) => t.status !== 'done').length}`)

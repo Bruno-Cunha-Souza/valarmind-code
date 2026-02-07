@@ -1,4 +1,5 @@
 import * as clack from '@clack/prompts'
+import { AVAILABLE_MODELS } from '../config/defaults.js'
 import { colors } from './ui.js'
 
 export async function askApiKey(): Promise<string | null> {
@@ -14,14 +15,13 @@ export async function askApiKey(): Promise<string | null> {
     return result
 }
 
-export async function askModel(models: { id: string; name: string }[]): Promise<string | null> {
-    const popular = models.slice(0, 10)
-
+export async function askModel(): Promise<string | null> {
     const result = await clack.select({
         message: 'Escolha o modelo default:',
-        options: popular.map((m) => ({
+        options: AVAILABLE_MODELS.map((m) => ({
             value: m.id,
-            label: m.name || m.id,
+            label: `${m.label}`,
+            hint: colors.dim(m.id),
         })),
     })
 

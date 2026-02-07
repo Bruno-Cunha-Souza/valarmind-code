@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import * as clack from '@clack/prompts'
+import { getModelLabel } from '../config/defaults.js'
 import type { Container } from '../core/container.js'
+import { promptInput } from './input.js'
 import { handleSlashCommand } from './slash-commands.js'
 import { banner, colors, formatError } from './ui.js'
 
@@ -8,24 +10,21 @@ export async function startREPL(container: Container): Promise<void> {
     const sessionId = randomUUID()
 
     console.log(banner())
-    console.log(colors.dim(`Model: ${container.config.model}`))
+    console.log(colors.dim(`Model: ${getModelLabel(container.config.model)}`))
     console.log(colors.dim('Type /help for commands, /exit to quit\n'))
 
     const usePlanMode = container.config.planMode
 
     while (true) {
-        const input = await clack.text({
-            message: '',
-            placeholder: 'Ask anything...',
-        })
+        const input = await promptInput()
 
-        if (clack.isCancel(input)) {
+        if (input === null) {
             await container.hookRunner.run('SessionEnd', { VALARMIND_SESSION_ID: sessionId })
             console.log(colors.dim('Bye!'))
             break
         }
 
-        const text = (input as string).trim()
+        const text = input.trim()
         if (!text) continue
 
         // Slash commands

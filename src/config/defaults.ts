@@ -1,7 +1,24 @@
 import type { ResolvedConfig } from './schema.js'
 
+export interface ModelOption {
+    id: string
+    label: string
+}
+
+export const AVAILABLE_MODELS: ModelOption[] = [
+    { id: 'anthropic/claude-opus-4.6', label: 'Claude Opus 4.6' },
+    { id: 'anthropic/claude-opus-4.5', label: 'Claude Opus 4.5' },
+    { id: 'anthropic/claude-sonnet-4.5', label: 'Claude Sonnet 4.5' },
+    { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+    { id: 'openai/gpt-5.2-codex', label: 'GPT 5.2 Codex' },
+]
+
+export function getModelLabel(modelId: string): string {
+    return AVAILABLE_MODELS.find((m) => m.id === modelId)?.label ?? modelId
+}
+
 export const DEFAULT_CONFIG: Omit<ResolvedConfig, 'apiKey' | 'projectDir' | 'configDir'> = {
-    model: 'anthropic/claude-sonnet-4-20250514',
+    model: 'anthropic/claude-sonnet-4.5',
     baseURL: 'https://openrouter.ai/api/v1',
     temperature: 0,
     maxTokens: 4096,
