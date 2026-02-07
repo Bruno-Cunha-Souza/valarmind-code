@@ -93,6 +93,34 @@ User → Orchestrator → [Search, Research] (paralelo) → Code → [Review, QA
 
 Profundidade máxima: 1. Sub-agentes não spawnam outros agentes.
 
+## Quality Gates
+
+Pipeline automático pós-Code Agent para mudanças multi-arquivo ou código de risco:
+
+```
+Code Agent → requiresReview() → Review Agent → parseReviewOutput()
+  → Não aprovado? → Code Agent (auto-fix) → Re-review (max 2 iterações)
+  → Aprovado? → requiresQA() → QA Agent → parseQAOutput()
+```
+
+Result parser usa balanced brace matching para extração segura de JSON de outputs LLM.
+
+## Plan Mode
+
+Orchestrator suporta criação e execução separadas de planos:
+
+```
+createPlan() → pendingPlan armazenado → executePendingPlan() | rejectPendingPlan()
+updatePlanTask(index, changes) → editar tasks antes de aprovar
+```
+
+## Métricas
+
+`MetricsCollector` escuta eventos do `TypedEventEmitter`:
+- `agent:start/complete/error` → invocações, duração, erros por agente
+- `token:usage` → tokens por agente e sessão
+- `tool:after` → contagem de tool calls
+
 ## Error Handling (3 camadas)
 
 1. **Classificação**: transient (429, 5xx, timeout) vs permanent (401, 400)

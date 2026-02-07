@@ -1276,35 +1276,35 @@ valarmind -y --no-sandbox -p "Run linter and fix issues" || exit 1
 
 ### Phase 1: Foundation
 
-- [ ] Commander.js setup with all options
-- [ ] Config file loading and merging
-- [ ] Environment variable support
-- [ ] Logger initialization (Pino)
-- [ ] Exit codes
+- [x] Commander.js setup with all options
+- [x] Config file loading and merging
+- [x] Environment variable support
+- [x] Logger initialization (Pino)
+- [x] Exit codes
 
 ### Phase 2: Core Features
 
-- [ ] Interactive REPL with readline
-- [ ] Slash command parser
-- [ ] Non-interactive mode
-- [ ] Basic hooks system
-- [ ] Permission prompts
+- [x] Interactive REPL with @clack/prompts
+- [x] Slash command parser (14 commands: /init, /compact, /clear, /help, /exit, /status, /agents, /plan, /approve, /reject, /tasks, /undo, /diff, /commit)
+- [x] Non-interactive mode (-p flag)
+- [x] Hooks system (UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd, PreCompact)
+- [ ] Permission prompts (planned)
 
 ### Phase 3: Integration
 
-- [ ] OpenAI SDK integration
-- [ ] Context loading (VALARMIND.md, state)
-- [ ] Token budget tracking
-- [ ] MCP server management
-- [ ] Sandbox execution
+- [x] OpenRouter API integration (LLMClient with chat + chatStream)
+- [x] Context loading (VALARMIND.md, VALARMIND.local.md, state.json)
+- [x] Token budget tracking (PromptBuilder with priority sections)
+- [ ] MCP server management (Phase 5)
+- [ ] Sandbox execution (Phase 5)
 
 ### Phase 4: Polish
 
-- [ ] Colored output (chalk/picocolors)
-- [ ] Progress indicators
-- [ ] Error formatting
-- [ ] Doctor command
-- [ ] Shell completions
+- [x] Colored output (picocolors via ui.ts)
+- [x] Progress indicators (clack spinners)
+- [x] Error formatting
+- [ ] Doctor command (planned)
+- [ ] Shell completions (planned)
 
 ## References
 

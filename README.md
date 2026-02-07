@@ -2,7 +2,7 @@
 
 Multi-agent CLI for software development, inspired by Claude Code CLI and Codex CLI. Each step of the development process is handled by a specialist agent.
 
-> **Status:** Phase 1+2 implemented — Foundation + Core Agents functional.
+> **Status:** Phase 1-4 implemented — Foundation, Core Agents, Quality Agents, and Integration functional.
 
 ## Features
 
@@ -152,21 +152,31 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 
 ### Phase 3: Quality Agents
 
-- [ ] Review Agent
-- [ ] QA Agent
-- [ ] Docs Agent
+- [x] Review Agent (code review, security, performance, auto-fix loop)
+- [x] QA Agent (build, lint, typecheck, tests via bash)
+- [x] Docs Agent (documentation generation and maintenance)
+- [x] Agent registration (8 agents total)
+- [x] Result parser (balanced brace JSON extraction)
+- [x] Quality gates integration in Orchestrator
 
 ### Phase 4: Integration
 
-- [ ] Full agentic loop
-- [ ] Prompt assembly with token budget
-- [ ] TOON compaction
+- [x] PromptBuilder integration in AgentRunner (priority-based sections, token budget)
+- [x] TOON compaction verification
+- [x] Hook integration (PreToolUse, PostToolUse, SessionEnd, PreCompact)
+- [x] Streaming in REPL (AsyncIterable for direct answers)
+- [x] Plan mode (createPlan, executePendingPlan, rejectPendingPlan, updatePlanTask)
+- [x] New slash commands (/plan, /approve, /reject, /tasks, /undo, /diff, /commit)
+- [x] MetricsCollector (token tracking, invocations, errors per agent via EventBus)
+- [x] Integration tests (orchestrator flow, plan mode, hooks)
 
-### Phase 5: Plugins
+### Phase 5: Plugins & Deferred
 
-- [ ] MCP Manager
-- [ ] Plugin Manager
+- [ ] MCP Manager (stdio/SSE transport)
+- [ ] Plugin Manager (native plugins)
 - [ ] Security and sandboxing
+- [ ] web_search tool implementation (currently placeholder)
+- [ ] LSP tool integration for Review Agent (currently uses read/grep/git_diff)
 
 ## References
 
