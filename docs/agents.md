@@ -1078,3 +1078,16 @@ The Orchestrator acts as a bridge between the main agentic loop and specialist a
 - [x] Integrate agents with main agentic loop (PromptBuilder, hooks, streaming, plan mode)
 - [x] Implement monitoring and metrics (MetricsCollector via EventBus)
 - [x] Integration tests (orchestrator flow, plan mode, hooks)
+
+### Phase 5: Web Search, Plugins & Deferred
+
+- [ ] Web search via OpenRouter `:online` suffix for Research Agent
+- [ ] Web fetch with Turndown + cheap model summarization
+- [ ] Tree-sitter repo map for structural code understanding (all agents)
+- [ ] MCP Manager (stdio/SSE transport)
+- [ ] Plugin Manager (native plugins)
+- [ ] Security and sandboxing
+
+### Future (not planned)
+
+- LSP integration via MCP (Serena pattern — user installs language-specific MCP servers)

@@ -23,6 +23,8 @@ User → CLI → Bootstrap → Orchestrator → Agent(s) → Tools → Result �
 | Sub-agentes | Profundidade máx 1 | Previne explosão recursiva (Claude Code, Aider) |
 | Tracing | Hierárquico desde dia 1 | Spans aninhados (OpenAI Agents SDK) |
 | Tools | Zod-first com .describe() | Schema → JSON Schema automático para LLM |
+| Code understanding | Tree-sitter repo map | Stateless, 200+ langs, sem server lifecycle (Aider) |
+| LSP | Não planejado (futuro via MCP) | Complexidade desproporcional ao ganho; diagnostics via bash + tree-sitter cobrem 80% |
 
 ## Estrutura de Módulos
 
@@ -133,9 +135,27 @@ updatePlanTask(index, changes) → editar tasks antes de aprovar
 core → logger → config → auth → events → tracing → llm → permissions → tools → memory → agents → hooks → cli → index.ts
 ```
 
+## Web Search
+
+Research Agent usa OpenRouter `:online` suffix para web search em tempo real, sem API key adicional.
+
+```
+Research Agent → LLMClient.chat({ model: "modelo:online" }) → OpenRouter Web Plugin (Exa) → annotations com url_citation
+```
+
+| Decisão | Escolha | Motivo |
+|---------|---------|--------|
+| Provider | OpenRouter `:online` | Zero-config, usa mesma API key, ~$0.02/busca |
+| Alternativa | Não implementada (Tavily/Brave como Layer 2 futuro) | Complexidade desnecessária para v1 |
+| Content fetch | HTTP + Turndown (HTML→Markdown) + modelo barato para resumo | Mesmo pattern do Claude Code (Haiku) |
+| Cache | TTL 15 min para páginas fetchadas | Evita re-fetch desnecessário |
+
+O suffix `:online` funciona com o OpenAI SDK porque é apenas parte do string do modelo — o SDK não valida e envia as-is para o OpenRouter.
+
 ## Referências
 
 - [Codex CLI](https://github.com/openai/codex) — single process, composition root
 - [Claude Code](https://claude.ai/code) — agent depth limits, tool error handling
 - [Aider](https://github.com/paul-gauthier/aider) — no sub-agent recursion
 - [OpenAI Agents SDK](https://openai.github.io/openai-agents-js/) — hierarchical tracing
+- [OpenRouter Web Search](https://openrouter.ai/docs/guides/features/plugins/web-search) — `:online` suffix docs

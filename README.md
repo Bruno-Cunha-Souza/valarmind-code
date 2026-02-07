@@ -170,13 +170,18 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 - [x] MetricsCollector (token tracking, invocations, errors per agent via EventBus)
 - [x] Integration tests (orchestrator flow, plan mode, hooks)
 
-### Phase 5: Plugins & Deferred
+### Phase 5: Web Search, Plugins & Deferred
 
+- [ ] Web search via OpenRouter `:online` suffix (Research Agent uses `model:online` for real-time web grounding)
+- [ ] Web fetch with Turndown HTML-to-Markdown + cheap model summarization
+- [ ] Tree-sitter repo map for structural code understanding (all agents, Aider-style)
 - [ ] MCP Manager (stdio/SSE transport)
 - [ ] Plugin Manager (native plugins)
 - [ ] Security and sandboxing
-- [ ] web_search tool implementation (currently placeholder)
-- [ ] LSP tool integration for Review Agent (currently uses read/grep/git_diff)
+
+### Future (not planned)
+
+- LSP integration via MCP (Serena pattern — user installs language-specific MCP servers)
 
 ## References
 
