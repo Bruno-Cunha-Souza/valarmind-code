@@ -1,0 +1,44 @@
+{
+  "name": "valarmind",
+  "version": "0.1.0",
+  "description": "CLI multi-agente para desenvolvimento de software",
+  "type": "module",
+  "bin": {
+    "valarmind": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check src/",
+    "lint:fix": "biome check --write src/",
+    "format": "biome format --write src/",
+    "check": "biome check src/ && bun run test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9",
+    "@modelcontextprotocol/sdk": "^1.12",
+    "@toon-format/toon": "^2",
+    "commander": "^13",
+    "execa": "^9",
+    "openai": "^4",
+    "picocolors": "^1",
+    "pino": "^9",
+    "pino-pretty": "^13",
+    "zod": "^3",
+    "zod-to-json-schema": "^3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1",
+    "@types/bun": "^1",
+    "typescript": "^5",
+    "vitest": "^3"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "license": "MIT"
+}

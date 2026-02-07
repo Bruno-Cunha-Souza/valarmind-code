@@ -2,7 +2,7 @@
 
 CLI multi-agente para desenvolvimento de software, inspirada no Claude Code CLI e Codex CLI. Cada etapa do processo de desenvolvimento é tratada por um agente especialista.
 
-> **Status:** Fase de especificação - apenas documentação, sem código fonte.
+> **Status:** Fase 1+2 implementada — Foundation + Core Agents funcionais.
 
 ## Features
 
@@ -115,6 +115,7 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 | [docs/init.md](docs/init.md) | Geração de VALARMIND.md |
 | [docs/cli.md](docs/cli.md) | Comandos, opções e hooks da CLI |
 | [docs/plugins.md](docs/plugins.md) | Sistema de plugins MCP e nativos |
+| [docs/architecture.md](docs/architecture.md) | Arquitetura técnica e decisões (ADR) |
 
 ## Stack
 
