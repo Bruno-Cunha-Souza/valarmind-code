@@ -1,7 +1,7 @@
 import { execaCommand } from 'execa'
-import { BunFileSystem } from '../../core/fs.js'
 import { loadCredentials } from '../../auth/credentials.js'
 import { validateApiKey } from '../../auth/validator.js'
+import { BunFileSystem } from '../../core/fs.js'
 import { colors } from '../ui.js'
 
 interface Check {

@@ -44,6 +44,7 @@ export const ConfigSchema = z.object({
             SessionEnd: z.array(HookConfigSchema).optional(),
         })
         .optional(),
+    planMode: z.boolean().optional(),
     mcp: z
         .object({
             servers: z.record(McpServerSchema).optional(),
@@ -63,6 +64,7 @@ export interface ResolvedConfig {
     permissionMode: 'auto' | 'suggest' | 'ask'
     tokenBudget: { target: number; hardCap: number }
     agentTimeouts: Partial<Record<AgentType, { default: number; max: number }>>
+    planMode: boolean
     hooks: Config['hooks'] & {}
     mcp: Config['mcp'] & {}
     projectDir: string

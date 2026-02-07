@@ -1,5 +1,5 @@
 import type { Result } from '../core/result.js'
-import { ok, err } from '../core/result.js'
+import { err, ok } from '../core/result.js'
 
 interface ModelInfo {
     id: string

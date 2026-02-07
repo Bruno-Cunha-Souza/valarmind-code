@@ -1,6 +1,6 @@
 import { execaCommand } from 'execa'
-import type { TypedEventEmitter } from '../core/events.js'
 import type { ResolvedConfig } from '../config/schema.js'
+import type { TypedEventEmitter } from '../core/events.js'
 import type { Logger } from '../logger/index.js'
 import type { HookConfig, HookName, HookResult } from './types.js'
 

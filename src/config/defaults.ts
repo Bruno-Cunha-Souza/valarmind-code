@@ -8,6 +8,7 @@ export const DEFAULT_CONFIG: Omit<ResolvedConfig, 'apiKey' | 'projectDir' | 'con
     logLevel: 'info',
     permissionMode: 'suggest',
     tokenBudget: { target: 3000, hardCap: 4800 },
+    planMode: false,
     agentTimeouts: {},
     hooks: {},
     mcp: {},

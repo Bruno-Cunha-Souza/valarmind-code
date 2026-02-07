@@ -1,5 +1,5 @@
 import type { Result } from '../core/result.js'
-import { ok, err } from '../core/result.js'
+import { err, ok } from '../core/result.js'
 import type { ToolPermissions } from '../core/types.js'
 import type { PermissionManager } from '../permissions/manager.js'
 import type { Tracer } from '../tracing/tracer.js'

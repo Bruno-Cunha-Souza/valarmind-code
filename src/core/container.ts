@@ -1,23 +1,24 @@
+import { Orchestrator } from '../agents/orchestrator/orchestrator.js'
+import type { AgentRegistry } from '../agents/registry.js'
+import { AgentRunner } from '../agents/runner.js'
+import { createAgentRegistry } from '../agents/setup.js'
 import type { ResolvedConfig } from '../config/schema.js'
-import type { Logger } from '../logger/index.js'
-import { createLogger } from '../logger/index.js'
-import { TypedEventEmitter } from './events.js'
-import { BunFileSystem, type FileSystem } from './fs.js'
-import { Tracer } from '../tracing/tracer.js'
-import { TraceExporter } from '../tracing/exporter.js'
+import { HookRunner } from '../hooks/runner.js'
 import { createLLMClient } from '../llm/client.js'
 import type { LLMClient } from '../llm/types.js'
-import { PermissionManager } from '../permissions/manager.js'
-import { createToolRegistry } from '../tools/setup.js'
-import { ToolRegistry } from '../tools/registry.js'
-import { ToolExecutor } from '../tools/executor.js'
-import { StateManager } from '../memory/state-manager.js'
+import type { Logger } from '../logger/index.js'
+import { createLogger } from '../logger/index.js'
 import { ContextLoader } from '../memory/context-loader.js'
-import { HookRunner } from '../hooks/runner.js'
-import { AgentRunner } from '../agents/runner.js'
-import { AgentRegistry } from '../agents/registry.js'
-import { createAgentRegistry } from '../agents/setup.js'
-import { Orchestrator } from '../agents/orchestrator/orchestrator.js'
+import { StateManager } from '../memory/state-manager.js'
+import { PermissionManager } from '../permissions/manager.js'
+import { ToolExecutor } from '../tools/executor.js'
+import type { ToolRegistry } from '../tools/registry.js'
+import { createToolRegistry } from '../tools/setup.js'
+import { TraceExporter } from '../tracing/exporter.js'
+import { MetricsCollector } from '../tracing/metrics.js'
+import { Tracer } from '../tracing/tracer.js'
+import { TypedEventEmitter } from './events.js'
+import { BunFileSystem, type FileSystem } from './fs.js'
 
 export interface Container {
     config: ResolvedConfig
@@ -36,6 +37,7 @@ export interface Container {
     hookRunner: HookRunner
     permissionManager: PermissionManager
     orchestrator: Orchestrator
+    metricsCollector: MetricsCollector
 }
 
 export function createContainer(config: ResolvedConfig): Container {
@@ -52,7 +54,7 @@ export function createContainer(config: ResolvedConfig): Container {
     const contextLoader = new ContextLoader(fs, stateManager)
     const hookRunner = new HookRunner(config, logger, eventBus)
     const agentRegistry = createAgentRegistry()
-    const agentRunner = new AgentRunner(llmClient, toolExecutor, toolRegistry, tracer, eventBus, config.projectDir, fs)
+    const agentRunner = new AgentRunner(llmClient, toolExecutor, toolRegistry, tracer, eventBus, config.projectDir, fs, hookRunner, config.tokenBudget)
     const orchestrator = new Orchestrator({
         llmClient,
         agentRunner,
@@ -64,6 +66,7 @@ export function createContainer(config: ResolvedConfig): Container {
         logger,
         projectDir: config.projectDir,
     })
+    const metricsCollector = new MetricsCollector(eventBus)
 
     return {
         config,
@@ -82,5 +85,6 @@ export function createContainer(config: ResolvedConfig): Container {
         hookRunner,
         permissionManager,
         orchestrator,
+        metricsCollector,
     }
 }

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { z } from 'zod'
-import type { FileSystem } from '../core/fs.js'
 import type { ResolvedConfig } from '../config/schema.js'
+import type { FileSystem } from '../core/fs.js'
 import type { Logger } from '../logger/index.js'
 import type { WorkingState } from './types.js'
 

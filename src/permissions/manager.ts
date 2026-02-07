@@ -1,6 +1,6 @@
 import * as clack from '@clack/prompts'
 import type { ResolvedConfig } from '../config/schema.js'
-import type { ToolPermissions, Permission } from '../core/types.js'
+import type { Permission, ToolPermissions } from '../core/types.js'
 import type { Logger } from '../logger/index.js'
 import type { PermissionRequest, PermissionResult } from './types.js'
 

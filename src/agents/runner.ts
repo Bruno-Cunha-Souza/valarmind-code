@@ -1,6 +1,8 @@
-import type { FileSystem } from '../core/fs.js'
 import type { TypedEventEmitter } from '../core/events.js'
-import type { LLMClient, ChatMessage } from '../llm/types.js'
+import type { FileSystem } from '../core/fs.js'
+import type { HookRunner } from '../hooks/runner.js'
+import { PromptBuilder } from '../llm/prompt-builder.js'
+import type { ChatMessage, LLMClient } from '../llm/types.js'
 import type { ToolExecutor } from '../tools/executor.js'
 import type { ToolRegistry } from '../tools/registry.js'
 import type { ToolContext } from '../tools/types.js'
@@ -21,7 +23,9 @@ export class AgentRunner {
         private tracer: Tracer,
         private eventBus: TypedEventEmitter,
         private projectDir: string,
-        private fs: FileSystem
+        private fs: FileSystem,
+        private hookRunner?: HookRunner,
+        private tokenBudget: { target: number; hardCap: number } = { target: 3000, hardCap: 4800 }
     ) {}
 
     async run(agent: BaseAgent, task: AgentTask, context: AgentContext): Promise<AgentResult> {
@@ -35,8 +39,17 @@ export class AgentRunner {
         let totalPromptTokens = 0
         let totalCompletionTokens = 0
 
+        // Build system prompt with PromptBuilder
+        const builder = new PromptBuilder()
+        builder.add('System', agent.buildSystemPrompt(context), 100)
+        if (context.projectContext) {
+            builder.add('Project Context', context.projectContext, 80)
+        }
+
+        const systemPrompt = builder.build(this.tokenBudget.hardCap)
+
         const messages: ChatMessage[] = [
-            { role: 'system', content: agent.buildSystemPrompt(context) },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: agent.formatTask(task.description, task.context) },
         ]
 
@@ -100,6 +113,15 @@ export class AgentRunner {
                         args = {}
                     }
 
+                    // PreToolUse hook
+                    if (this.hookRunner) {
+                        await this.hookRunner.run('PreToolUse', {
+                            VALARMIND_TOOL: call.function.name,
+                            VALARMIND_AGENT: agent.type,
+                            VALARMIND_ARGS: JSON.stringify(args),
+                        })
+                    }
+
                     this.eventBus.emit('tool:before', {
                         toolName: call.function.name,
                         agentType: agent.type,
@@ -110,6 +132,15 @@ export class AgentRunner {
                         agentPermissions: agent.permissions,
                         signal: controller.signal,
                     })
+
+                    // PostToolUse hook
+                    if (this.hookRunner) {
+                        await this.hookRunner.run('PostToolUse', {
+                            VALARMIND_TOOL: call.function.name,
+                            VALARMIND_AGENT: agent.type,
+                            VALARMIND_SUCCESS: String(result.ok),
+                        })
+                    }
 
                     this.eventBus.emit('tool:after', {
                         toolName: call.function.name,

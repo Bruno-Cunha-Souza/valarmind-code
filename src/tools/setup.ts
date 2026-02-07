@@ -1,17 +1,17 @@
-import type { FileSystem } from '../core/fs.js'
 import type { ResolvedConfig } from '../config/schema.js'
+import type { FileSystem } from '../core/fs.js'
 import type { Logger } from '../logger/index.js'
-import { ToolRegistry } from './registry.js'
-import { readFileTool } from './filesystem/read.js'
-import { writeFileTool } from './filesystem/write.js'
 import { editFileTool } from './filesystem/edit.js'
 import { globTool } from './filesystem/glob.js'
 import { grepTool } from './filesystem/grep.js'
+import { readFileTool } from './filesystem/read.js'
 import { treeViewTool } from './filesystem/tree-view.js'
+import { writeFileTool } from './filesystem/write.js'
+import { ToolRegistry } from './registry.js'
 import { bashTool } from './shell/bash.js'
 import { gitDiffTool } from './shell/git-diff.js'
-import { webSearchTool } from './web/web-search.js'
 import { webFetchTool } from './web/web-fetch.js'
+import { webSearchTool } from './web/web-search.js'
 
 export function createToolRegistry(_config: ResolvedConfig, _logger: Logger, _fs: FileSystem): ToolRegistry {
     const registry = new ToolRegistry()

@@ -1,7 +1,7 @@
 import * as clack from '@clack/prompts'
-import { BunFileSystem } from '../../core/fs.js'
-import { loadCredentials, saveCredentials, removeCredentials, maskApiKey } from '../../auth/credentials.js'
+import { loadCredentials, maskApiKey, removeCredentials, saveCredentials } from '../../auth/credentials.js'
 import { validateApiKey } from '../../auth/validator.js'
+import { BunFileSystem } from '../../core/fs.js'
 import { askApiKey } from '../prompts.js'
 import { colors } from '../ui.js'
 

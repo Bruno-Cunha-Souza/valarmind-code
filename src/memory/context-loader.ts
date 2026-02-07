@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { FileSystem } from '../core/fs.js'
-import type { StateManager } from './state-manager.js'
 import { compactState } from './compactor.js'
+import type { StateManager } from './state-manager.js'
 
 export interface ProjectContext {
     valarmindMd: string | null

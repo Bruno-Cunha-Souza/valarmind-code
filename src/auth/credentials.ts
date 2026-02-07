@@ -1,5 +1,5 @@
-import type { FileSystem } from '../core/fs.js'
 import { CONFIG_DIR, CREDENTIALS_FILE } from '../config/defaults.js'
+import type { FileSystem } from '../core/fs.js'
 
 interface Credentials {
     apiKey: string

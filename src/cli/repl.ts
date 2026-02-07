@@ -1,12 +1,17 @@
+import { randomUUID } from 'node:crypto'
 import * as clack from '@clack/prompts'
 import type { Container } from '../core/container.js'
-import { banner, colors, formatError } from './ui.js'
 import { handleSlashCommand } from './slash-commands.js'
+import { banner, colors, formatError } from './ui.js'
 
 export async function startREPL(container: Container): Promise<void> {
+    const sessionId = randomUUID()
+
     console.log(banner())
     console.log(colors.dim(`Model: ${container.config.model}`))
     console.log(colors.dim('Type /help for commands, /exit to quit\n'))
+
+    const usePlanMode = container.config.planMode
 
     while (true) {
         const input = await clack.text({
@@ -15,6 +20,7 @@ export async function startREPL(container: Container): Promise<void> {
         })
 
         if (clack.isCancel(input)) {
+            await container.hookRunner.run('SessionEnd', { VALARMIND_SESSION_ID: sessionId })
             console.log(colors.dim('Bye!'))
             break
         }
@@ -34,17 +40,59 @@ export async function startREPL(container: Container): Promise<void> {
         }
 
         // Process via orchestrator
-        const spinner = clack.spinner()
-        spinner.start('Processando...')
-
         try {
             await container.hookRunner.run('UserPromptSubmit', { VALARMIND_INPUT: text })
 
-            const result = await container.orchestrator.process(text)
-            spinner.stop('Concluído')
-            console.log(`\n${result}\n`)
+            if (usePlanMode) {
+                // Plan mode: create plan, wait for /approve or /reject
+                const spinner = clack.spinner()
+                spinner.start('Criando plano...')
+                const plan = await container.orchestrator.createPlan(text)
+                spinner.stop('Plano criado')
+
+                if (plan) {
+                    console.log(`\n${colors.bold('Plano:')} ${plan.plan}`)
+                    console.log(colors.dim('Tasks:'))
+                    for (let i = 0; i < plan.tasks.length; i++) {
+                        const t = plan.tasks[i]!
+                        const deps = t.dependsOn?.length ? ` (depende de: ${t.dependsOn.join(', ')})` : ''
+                        console.log(`  ${i}. ${colors.agent(t.agent)} ${t.description}${colors.dim(deps)}`)
+                    }
+                    console.log(colors.dim('\nUse /approve para executar, /reject para cancelar'))
+                } else {
+                    console.log(colors.warn('Não foi possível criar um plano para esta solicitação.'))
+                }
+            } else {
+                // Streaming for direct answers, spinner for delegated tasks
+                let isStreaming = false
+                let hasOutput = false
+                const spinner = clack.spinner()
+                spinner.start('Processando...')
+
+                try {
+                    for await (const chunk of container.orchestrator.processStream(text)) {
+                        if (!isStreaming) {
+                            spinner.stop('')
+                            isStreaming = true
+                        }
+                        process.stdout.write(chunk)
+                        hasOutput = true
+                    }
+
+                    if (!isStreaming) {
+                        spinner.stop('Concluído')
+                    }
+                    if (hasOutput) {
+                        process.stdout.write('\n\n')
+                    }
+                } catch (error) {
+                    if (!isStreaming) {
+                        spinner.stop('Erro')
+                    }
+                    throw error
+                }
+            }
         } catch (error) {
-            spinner.stop('Erro')
             console.log(formatError((error as Error).message))
         }
     }
