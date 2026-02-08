@@ -33,17 +33,24 @@ interface Spinner {
 
 export interface ProgressTracker {
     dispose(): void
+    notifySpinnerStopped(): void
 }
 
 export function createProgressTracker(
     eventBus: TypedEventEmitter,
-    spinner: Spinner
+    spinner: Spinner,
+    restartSpinner?: () => void
 ): ProgressTracker {
     let currentAgent: AgentType | null = null
+    let spinnerActive = true
 
     const onAgentStart = (data: { agentType: AgentType; taskId: string }) => {
         if (data.agentType === 'orchestrator') return
         currentAgent = data.agentType
+        if (!spinnerActive && restartSpinner) {
+            restartSpinner()
+            spinnerActive = true
+        }
         spinner.message(AGENT_LABELS[data.agentType] ?? `${data.agentType}...`)
     }
 
@@ -79,6 +86,10 @@ export function createProgressTracker(
             eventBus.off('tool:before', onToolBefore)
             eventBus.off('tool:after', onToolAfter)
             currentAgent = null
+            spinnerActive = false
+        },
+        notifySpinnerStopped() {
+            spinnerActive = false
         },
     }
 }

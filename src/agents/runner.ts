@@ -2,7 +2,9 @@ import { errorMessage } from '../core/errors.js'
 import type { TypedEventEmitter } from '../core/events.js'
 import type { FileSystem } from '../core/fs.js'
 import type { HookRunner } from '../hooks/runner.js'
+import { getModelSpec } from '../llm/model-specs.js'
 import { PromptBuilder } from '../llm/prompt-builder.js'
+import { estimateTokens } from '../llm/token-counter.js'
 import type { ChatMessage, LLMClient } from '../llm/types.js'
 import type { SandboxManager } from '../security/sandbox.js'
 import type { ToolExecutor } from '../tools/executor.js'
@@ -180,6 +182,8 @@ export class AgentRunner {
                         content: formatToolResult(result),
                     })
                 }
+
+                this.trimRunnerMessages(messages)
             }
         } catch (error) {
             this.tracer.endSpan(span)
@@ -209,5 +213,33 @@ export class AgentRunner {
             summary: 'Max turns reached',
             tokenUsage: { prompt: totalPromptTokens, completion: totalCompletionTokens },
         }
+    }
+
+    private trimRunnerMessages(messages: ChatMessage[]): void {
+        let totalTokens = 0
+        for (const msg of messages) {
+            const content = typeof msg.content === 'string'
+                ? msg.content
+                : JSON.stringify(msg.content ?? '')
+            totalTokens += estimateTokens(content)
+        }
+
+        // Use 60% of the context window as limit for the runner
+        // (remainder reserved for response + system prompt)
+        const spec = getModelSpec(this.defaultModel ?? '')
+        const runnerLimit = Math.floor(spec.contextWindow * 0.6)
+
+        if (totalTokens <= runnerLimit) return
+
+        // Preserve: system (idx 0), user task (idx 1), and last 6 messages
+        const KEEP_START = 2
+        const KEEP_END = 6
+        if (messages.length <= KEEP_START + KEEP_END) return
+
+        const toRemove = messages.length - KEEP_START - KEEP_END
+        messages.splice(KEEP_START, toRemove, {
+            role: 'user',
+            content: '[Previous conversation truncated due to context limits]',
+        })
     }
 }

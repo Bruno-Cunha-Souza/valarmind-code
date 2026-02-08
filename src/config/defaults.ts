@@ -34,7 +34,7 @@ export const DEFAULT_CONFIG: Omit<ResolvedConfig, 'apiKey' | 'projectDir' | 'con
     temperature: 0,
     maxTokens: 4096,
     logLevel: 'info',
-    permissionMode: 'suggest',
+    permissionMode: 'ask',
     tokenBudget: { target: 3000, hardCap: 4800 },
     planMode: false,
     agentTimeouts: {},

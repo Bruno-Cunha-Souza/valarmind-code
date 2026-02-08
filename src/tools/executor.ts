@@ -29,6 +29,18 @@ export class ToolExecutor {
             return err(`Permission denied: ${name} requires '${tool.requiredPermission}'`)
         }
 
+        if (tool.requiredPermission === 'write' || tool.requiredPermission === 'execute') {
+            const permResult = await this.permissionManager.requestPermission({
+                toolName: name,
+                permission: tool.requiredPermission,
+                description: `${name} wants to ${tool.requiredPermission} (agent: ${ctx.agentType})`,
+                args,
+            })
+            if (!permResult.granted) {
+                return err(`Permission denied by user: ${permResult.reason ?? 'rejected'}`)
+            }
+        }
+
         const parsed = tool.parameters.safeParse(args)
         if (!parsed.success) {
             return err(`Invalid params for ${name}: ${parsed.error.message}`)

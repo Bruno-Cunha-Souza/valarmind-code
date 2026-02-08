@@ -97,12 +97,14 @@ export async function startREPL(container: Container): Promise<void> {
                 let hasOutput = false
                 const spinner = clack.spinner()
                 spinner.start('Processing...')
-                const progress = createProgressTracker(container.eventBus, spinner)
+                const progress = createProgressTracker(container.eventBus, spinner, () => {
+                    spinner.start('Processing...')
+                })
 
                 try {
                     for await (const chunk of container.orchestrator.processStream(text)) {
                         if (!isStreaming) {
-                            progress.dispose()
+                            progress.notifySpinnerStopped()
                             spinner.stop('')
                             isStreaming = true
                         }

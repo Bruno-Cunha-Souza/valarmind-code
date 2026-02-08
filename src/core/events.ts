@@ -13,6 +13,9 @@ export type EventMap = {
     }
     'token:usage': { agentType: AgentType; prompt: number; completion: number }
     'session:end': { sessionId: string; totalTokens: number }
+    'task:start': { taskId: string; agent: string; description: string }
+    'task:complete': { taskId: string; agent: string; success: boolean }
+    'task:error': { taskId: string; agent: string; error: string }
 }
 
 type EventHandler<T> = (data: T) => void

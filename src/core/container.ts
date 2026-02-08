@@ -88,6 +88,7 @@ export function createContainer(config: ResolvedConfig): Container {
         eventBus,
         logger,
         projectDir: config.projectDir,
+        config: { model: config.model },
     })
     const metricsCollector = new MetricsCollector(eventBus)
 

@@ -3,6 +3,8 @@ import { errorMessage } from '../../core/errors.js'
 import type { TypedEventEmitter } from '../../core/events.js'
 import type { AgentType } from '../../core/types.js'
 import type { ChatMessage, LLMClient } from '../../llm/types.js'
+import { getCompactThreshold } from '../../llm/model-specs.js'
+import { estimateTokens } from '../../llm/token-counter.js'
 import type { Logger } from '../../logger/index.js'
 import type { ContextLoader, ProjectContext } from '../../memory/context-loader.js'
 import type { StateManager } from '../../memory/state-manager.js'
@@ -27,6 +29,7 @@ interface OrchestratorDeps {
     eventBus: TypedEventEmitter
     logger: Logger
     projectDir: string
+    config?: { model: string }
 }
 
 export class Orchestrator {
@@ -39,9 +42,44 @@ export class Orchestrator {
     constructor(private deps: OrchestratorDeps) {}
 
     private trimHistory(): void {
+        const threshold = getCompactThreshold(this.deps.config?.model ?? '')
+
+        let totalTokens = 0
+        for (const msg of this.conversationHistory) {
+            totalTokens += estimateTokens(
+                typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? '')
+            )
+        }
+
+        if (totalTokens > threshold) {
+            const keepRecent = 10
+            if (this.conversationHistory.length > keepRecent + 1) {
+                const first = this.conversationHistory[0]
+                const recent = this.conversationHistory.slice(-keepRecent)
+                this.conversationHistory = [
+                    first!,
+                    { role: 'user', content: '[Histórico anterior compactado por limite de contexto]' },
+                    ...recent,
+                ]
+                this.deps.logger.info(
+                    { before: totalTokens, after: this.estimateHistoryTokens() },
+                    'Conversation history compacted due to context window limit'
+                )
+            }
+        }
+
+        // Fallback: limite de mensagens (safety net)
         if (this.conversationHistory.length > Orchestrator.MAX_HISTORY) {
             this.conversationHistory = this.conversationHistory.slice(-Orchestrator.MAX_HISTORY)
         }
+    }
+
+    private estimateHistoryTokens(): number {
+        return this.conversationHistory.reduce((sum, msg) => {
+            return sum + estimateTokens(
+                typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? '')
+            )
+        }, 0)
     }
 
     async process(input: string, signal?: AbortSignal): Promise<string> {
@@ -317,13 +355,19 @@ export class Orchestrator {
                         ready = this.taskManager.getReadyTasks()
                     }
                 }
-                if (ready.length === 0) break
+                if (ready.length === 0) {
+                    this.deps.logger.warn('No ready tasks and no retryable tasks; ending plan execution early')
+                    break
+                }
             }
 
             const promises = ready.map(async (task) => {
                 const tasks = this.taskManager.getTasks()
                 const taskIndex = tasks.indexOf(task)
                 this.taskManager.markInProgress(taskIndex)
+                this.deps.eventBus.emit('task:start', {
+                    taskId: task.id, agent: task.agent, description: task.description,
+                })
 
                 const agent = this.deps.agentRegistry.get(task.agent as AgentType)
                 if (!agent) {
@@ -367,10 +411,16 @@ export class Orchestrator {
                 try {
                     const result = await this.deps.agentRunner.run(agent, agentTask, agentContext)
                     this.taskManager.markCompleted(taskIndex, result.output)
+                    this.deps.eventBus.emit('task:complete', {
+                        taskId: task.id, agent: task.agent, success: true,
+                    })
                     return result
                 } catch (error) {
                     const msg = errorMessage(error)
                     this.taskManager.markFailed(taskIndex, msg)
+                    this.deps.eventBus.emit('task:error', {
+                        taskId: task.id, agent: task.agent, error: msg,
+                    })
                     return {
                         taskId: task.id,
                         success: false,
