@@ -63,4 +63,35 @@ describe('CircuitBreaker', () => {
         expect(result).toBe('ok')
         expect(breaker.getState()).toBe('closed')
     })
+
+    it('does NOT count abort errors as failures', async () => {
+        const breaker = new CircuitBreaker(2, 1000)
+
+        for (let i = 0; i < 5; i++) {
+            const abortError = new DOMException('The operation was aborted', 'AbortError')
+            await expect(breaker.execute(() => Promise.reject(abortError))).rejects.toThrow()
+        }
+
+        // Circuit should still be closed — abort errors don't count
+        expect(breaker.getState()).toBe('closed')
+    })
+
+    it('counts normal errors but not abort errors', async () => {
+        const breaker = new CircuitBreaker(2, 1000)
+
+        // 1 normal failure
+        await expect(breaker.execute(() => Promise.reject(new Error('fail')))).rejects.toThrow()
+        expect(breaker.getState()).toBe('closed')
+
+        // 3 abort errors — should NOT increment failure count
+        for (let i = 0; i < 3; i++) {
+            const abortError = new DOMException('aborted', 'AbortError')
+            await expect(breaker.execute(() => Promise.reject(abortError))).rejects.toThrow()
+        }
+        expect(breaker.getState()).toBe('closed')
+
+        // 1 more normal failure — now at 2 total normal failures → opens
+        await expect(breaker.execute(() => Promise.reject(new Error('fail2')))).rejects.toThrow()
+        expect(breaker.getState()).toBe('open')
+    })
 })

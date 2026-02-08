@@ -34,7 +34,11 @@ export class AgentRunner {
 
     async run(agent: BaseAgent, task: AgentTask, context: AgentContext): Promise<AgentResult> {
         const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), agent.timeout.max * 1000)
+        const effectiveTimeout = Math.min(
+            task.timeoutOverride ?? agent.timeout.max,
+            agent.timeout.max * 3
+        )
+        const timer = setTimeout(() => controller.abort(), effectiveTimeout * 1000)
         const span = this.tracer.startSpan('agent', { agent: agent.type, task: task.id })
 
         this.eventBus.emit('agent:start', { agentType: agent.type, taskId: task.id })

@@ -34,6 +34,12 @@ export function errorMessage(error: unknown): string {
     return String(error)
 }
 
+export function isAbortError(error: unknown): boolean {
+    if (error instanceof DOMException && error.name === 'AbortError') return true
+    if (error instanceof Error && error.name === 'AbortError') return true
+    return false
+}
+
 export function classifyError(error: unknown): ErrorKind {
     if (error instanceof ValarMindError) return error.kind
     if (error instanceof TypeError && error.message.includes('fetch')) return 'transient'

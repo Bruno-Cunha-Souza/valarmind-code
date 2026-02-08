@@ -8,6 +8,7 @@ export interface AgentTask {
     description: string
     context?: Record<string, unknown>
     parentTaskId?: string
+    timeoutOverride?: number
 }
 
 export interface AgentResult {

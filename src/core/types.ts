@@ -24,7 +24,7 @@ export const AGENT_PERMISSIONS: Record<AgentType, ToolPermissions> = {
 
 export const AGENT_TIMEOUTS: Record<AgentType, { default: number; max: number }> = {
     orchestrator: { default: 120, max: 300 },
-    search: { default: 30, max: 60 },
+    search: { default: 60, max: 120 },
     research: { default: 45, max: 120 },
     code: { default: 120, max: 300 },
     review: { default: 60, max: 120 },

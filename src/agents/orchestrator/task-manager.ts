@@ -8,6 +8,7 @@ export interface ManagedTask extends AgentTask {
     agent: string
     dependsOn: number[]
     result?: unknown
+    retryCount: number
 }
 
 export class TaskManager {
@@ -22,6 +23,7 @@ export class TaskManager {
             agent,
             dependsOn,
             status: 'pending',
+            retryCount: 0,
         })
         return index
     }
@@ -57,6 +59,16 @@ export class TaskManager {
 
     getTasks(): ManagedTask[] {
         return [...this.tasks]
+    }
+
+    markForRetry(index: number, timeoutOverride?: number): boolean {
+        const task = this.tasks[index]
+        if (!task || task.retryCount >= 1) return false
+        task.status = 'pending'
+        task.retryCount++
+        task.result = undefined
+        if (timeoutOverride) task.timeoutOverride = timeoutOverride
+        return true
     }
 
     clear(): void {

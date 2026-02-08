@@ -31,6 +31,7 @@ interface OrchestratorDeps {
 
 export class Orchestrator {
     private static readonly MAX_HISTORY = 50
+    private static readonly CORE_AGENTS = new Set(['search', 'code', 'test'])
     private taskManager = new TaskManager()
     private conversationHistory: ChatMessage[] = []
     private pendingPlan: Plan | null = null
@@ -308,8 +309,16 @@ export class Orchestrator {
 
         while (!this.taskManager.isComplete()) {
             if (agentContext.signal.aborted) break
-            const ready = this.taskManager.getReadyTasks()
-            if (ready.length === 0) break
+            let ready = this.taskManager.getReadyTasks()
+            if (ready.length === 0) {
+                if (!agentContext.signal.aborted) {
+                    const retried = this.retryTimedOutTasks()
+                    if (retried > 0) {
+                        ready = this.taskManager.getReadyTasks()
+                    }
+                }
+                if (ready.length === 0) break
+            }
 
             const promises = ready.map(async (task) => {
                 const tasks = this.taskManager.getTasks()
@@ -318,8 +327,15 @@ export class Orchestrator {
 
                 const agent = this.deps.agentRegistry.get(task.agent as AgentType)
                 if (!agent) {
-                    this.taskManager.markFailed(taskIndex, `Agent '${task.agent}' not found`)
-                    return null
+                    const msg = `Agent '${task.agent}' not found`
+                    this.taskManager.markFailed(taskIndex, msg)
+                    return {
+                        taskId: task.id,
+                        success: false,
+                        output: null,
+                        summary: `Agent error: ${msg}`,
+                        tokenUsage: { prompt: 0, completion: 0 },
+                    } satisfies AgentResult
                 }
 
                 let depContext: Record<string, unknown> = {}
@@ -353,8 +369,15 @@ export class Orchestrator {
                     this.taskManager.markCompleted(taskIndex, result.output)
                     return result
                 } catch (error) {
-                    this.taskManager.markFailed(taskIndex, errorMessage(error))
-                    return null
+                    const msg = errorMessage(error)
+                    this.taskManager.markFailed(taskIndex, msg)
+                    return {
+                        taskId: task.id,
+                        success: false,
+                        output: null,
+                        summary: `Agent error: ${msg}`,
+                        tokenUsage: { prompt: 0, completion: 0 },
+                    } satisfies AgentResult
                 }
             })
 
@@ -468,6 +491,34 @@ export class Orchestrator {
         return gateResults
     }
 
+    private retryTimedOutTasks(): number {
+        const tasks = this.taskManager.getTasks()
+        let retried = 0
+
+        for (let i = 0; i < tasks.length; i++) {
+            const task = tasks[i]!
+            if (task.status !== 'failed') continue
+
+            const errorMsg = String(task.result ?? '')
+            const isTimeout = errorMsg.includes('aborted') || errorMsg.includes('Aborted')
+            if (!isTimeout) continue
+
+            const agent = this.deps.agentRegistry.get(task.agent as AgentType)
+            if (!agent) continue
+
+            const newTimeout = agent.timeout.max * 2
+            if (this.taskManager.markForRetry(i, newTimeout)) {
+                this.deps.logger.info(
+                    { agent: task.agent, taskIndex: i, newTimeout },
+                    'Retrying timed-out task with extended timeout'
+                )
+                retried++
+            }
+        }
+
+        return retried
+    }
+
     private buildProjectContextString(ctx: ProjectContext): string {
         const parts: string[] = []
         if (ctx.valarmindMd) parts.push(ctx.valarmindMd)
@@ -483,6 +534,14 @@ export class Orchestrator {
         parts.push(`**Plan:** ${plan}`)
         parts.push(`**Results:** ${successCount}/${results.length} tasks completed\n`)
 
+        const failedCore = results.filter(
+            (r) => !r.success && Orchestrator.CORE_AGENTS.has(this.getAgentForTask(r.taskId))
+        )
+        if (failedCore.length > 0) {
+            const agents = [...new Set(failedCore.map((r) => this.getAgentForTask(r.taskId)))]
+            parts.push(`**Aviso:** Tarefas críticas falharam (${agents.join(', ')}). Os resultados podem estar incompletos.\n`)
+        }
+
         for (const result of results) {
             if (result.success && result.summary) {
                 parts.push(result.summary)
@@ -492,6 +551,11 @@ export class Orchestrator {
         }
 
         return parts.join('\n\n')
+    }
+
+    private getAgentForTask(taskId: string): string {
+        const task = this.taskManager.getTasks().find((t) => t.id === taskId)
+        return task?.agent ?? ''
     }
 
     getLastTaskResults(): { agent: string; result: unknown; status: string }[] {

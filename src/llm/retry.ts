@@ -1,4 +1,4 @@
-import { classifyError } from '../core/errors.js'
+import { classifyError, isAbortError } from '../core/errors.js'
 
 export interface RetryOptions {
     maxRetries: number
@@ -63,7 +63,9 @@ export class CircuitBreaker {
             this.onSuccess()
             return result
         } catch (error) {
-            this.onFailure()
+            if (!isAbortError(error)) {
+                this.onFailure()
+            }
             throw error
         }
     }

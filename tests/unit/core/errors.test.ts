@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { ValarMindError, TransientError, PermanentError, classifyError, classifyHttpError } from '../../../src/core/errors.js'
+import { ValarMindError, TransientError, PermanentError, classifyError, classifyHttpError, isAbortError } from '../../../src/core/errors.js'
 
 describe('Error classification', () => {
     it('classifies 429 as transient', () => {
@@ -37,6 +37,32 @@ describe('Error classification', () => {
     it('classifies object with status', () => {
         expect(classifyError({ status: 429 })).toBe('transient')
         expect(classifyError({ status: 401 })).toBe('permanent')
+    })
+})
+
+describe('isAbortError', () => {
+    it('detects DOMException with name AbortError', () => {
+        const err = new DOMException('The operation was aborted', 'AbortError')
+        expect(isAbortError(err)).toBe(true)
+    })
+
+    it('detects Error with name AbortError', () => {
+        const err = new Error('Request was aborted')
+        err.name = 'AbortError'
+        expect(isAbortError(err)).toBe(true)
+    })
+
+    it('returns false for generic Error', () => {
+        expect(isAbortError(new Error('some error'))).toBe(false)
+    })
+
+    it('returns false for null/undefined', () => {
+        expect(isAbortError(null)).toBe(false)
+        expect(isAbortError(undefined)).toBe(false)
+    })
+
+    it('returns false for non-Error objects', () => {
+        expect(isAbortError({ name: 'AbortError' })).toBe(false)
     })
 })
 
