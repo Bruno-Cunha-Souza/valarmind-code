@@ -169,6 +169,7 @@ Only use your own tools (glob, grep, read_file) if the search results are missin
 
             if (content && content.includes('# ')) {
                 await container.fs.writeText(valarmindPath, content)
+                container.contextLoader.invalidate()
                 const lineCount = content.split('\n').length
                 return `VALARMIND.md generated (${lineCount} lines). Saved to ${valarmindPath}`
             }

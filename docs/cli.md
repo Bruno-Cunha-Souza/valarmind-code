@@ -1330,10 +1330,10 @@ valarmind -y --no-sandbox -p "Run linter and fix issues" || exit 1
 ### Phase 3: Integration
 
 - [x] OpenRouter API integration (LLMClient with chat + chatStream)
-- [x] Context loading (VALARMIND.md, VALARMIND.local.md, state.json)
+- [x] Context loading (VALARMIND.md, VALARMIND.local.md, state.json) with session caching
 - [x] Token budget tracking (PromptBuilder with priority sections)
-- [ ] MCP server management (Phase 5)
-- [ ] Sandbox execution (Phase 5)
+- [x] MCP server management (MCPManager with stdio/StreamableHTTP transport)
+- [x] Sandbox execution (SandboxManager with per-agent profiles, macOS sandbox-exec, Linux bubblewrap)
 
 ### Phase 4: Polish
 

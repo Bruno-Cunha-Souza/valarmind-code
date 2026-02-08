@@ -2,6 +2,14 @@
 
 Use the `/init` command to generate a `VALARMIND.md` file containing the project instructions. ValarMind automatically reads this file at the start of each chat session in that repository, so it can maintain persistent context about how you want it to work there. The goal is to avoid repeatedly searching for the same project information and to keep a consistent standard from start to finish.
 
+### Context Isolation
+
+The Init Agent sets `excludeProjectContext = true`, meaning it does **not** receive the existing VALARMIND.md content in its prompt when regenerating. This prevents circular reference — the agent generates fresh content based on project analysis via its tools (read_file, glob, grep, tree_view), not biased by the old VALARMIND.md.
+
+### Cache Invalidation
+
+ValarMind caches VALARMIND.md and VALARMIND.local.md in memory for the duration of the session to avoid redundant disk reads. After `/init` writes the new file, `contextLoader.invalidate()` is called to clear this cache, ensuring all subsequent agent calls see the updated content immediately.
+
 ## CLAUDE.md
 
 Claude Code CLI is widely used as an AI agent tool for coding. It generates a `CLAUDE.md` file with the same purpose as `VALARMIND.md`, which is why this process includes a step to reference `CLAUDE.md` inside `VALARMIND.md`.

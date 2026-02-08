@@ -41,10 +41,10 @@ describe('ReviewAgent', () => {
         expect(prompt).toContain('overallScore')
     })
 
-    it('includes project context in prompt', () => {
+    it('buildSystemPrompt does not include projectContext (injected by runner)', () => {
         const ctx = { ...baseContext, projectContext: 'My project uses TypeScript' }
         const prompt = agent.buildSystemPrompt(ctx)
-        expect(prompt).toContain('My project uses TypeScript')
+        expect(prompt).not.toContain('My project uses TypeScript')
     })
 
     it('includes conventions in prompt', () => {

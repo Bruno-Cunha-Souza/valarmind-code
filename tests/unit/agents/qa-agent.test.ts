@@ -41,10 +41,10 @@ describe('QAAgent', () => {
         expect(prompt).toContain('package.json')
     })
 
-    it('includes project context in prompt', () => {
+    it('buildSystemPrompt does not include projectContext (injected by runner)', () => {
         const ctx = { ...baseContext, projectContext: 'Custom QA commands: bun run check' }
         const prompt = agent.buildSystemPrompt(ctx)
-        expect(prompt).toContain('Custom QA commands')
+        expect(prompt).not.toContain('Custom QA commands')
     })
 
     it('has correct timeout', () => {

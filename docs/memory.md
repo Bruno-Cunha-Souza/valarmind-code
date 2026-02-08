@@ -192,7 +192,44 @@ console.assert(JSON.stringify(state) === JSON.stringify(decoded));
 - Open tasks and blockers
 - Uniform lists (TOON is very efficient with tabular arrays)
 
+## Context Loading and Caching
+
+`ContextLoader` is responsible for assembling project context from disk. It implements session-level caching to avoid redundant I/O.
+
+| Content | Caching | Reason |
+|---------|---------|--------|
+| `VALARMIND.md` | Cached after first load | Static during session (only changes via `/init`) |
+| `VALARMIND.local.md` | Cached after first load | Static during session |
+| `stateCompact` | Always loaded fresh | Changes between calls via `stateManager.update()` |
+
+Cache is per `projectDir` — loading a different project invalidates the previous cache.
+
+The `invalidate()` method clears the cache. It is called after `/init` writes a new `VALARMIND.md`, ensuring subsequent prompts see the updated content.
+
 ## Prompt Assembly with Token Budget
+
+### Prompt Construction (AgentRunner)
+
+The `AgentRunner` uses `PromptBuilder` to assemble the system prompt with prioritized sections:
+
+| Section | Priority | Source |
+|---------|----------|--------|
+| System | 100 | `agent.buildSystemPrompt(context)` — agent instructions + conventions |
+| Project Context | 80 | `context.projectContext` — VALARMIND.md + local.md + stateCompact |
+
+If the total exceeds the `hardCap` token budget, lower-priority sections are dropped first (Project Context before System).
+
+`buildSystemPrompt()` returns **only** the agent's base instructions. Project context is injected as a separate PromptBuilder section, not concatenated inside buildSystemPrompt. This prevents double injection and enables intelligent truncation.
+
+The `excludeProjectContext` flag (default: `false`) allows agents to opt out of receiving project context. The Init Agent sets this to `true` to avoid circular reference when regenerating VALARMIND.md.
+
+### Orchestrator Prompt
+
+The Orchestrator builds its own system prompt directly (not via PromptBuilder):
+
+```
+ORCHESTRATOR_SYSTEM_PROMPT + valarmindMd + localMd + stateCompact
+```
 
 ### Recommended Order
 
@@ -300,67 +337,30 @@ console.log(`Tokens: ${tokenCount.total_tokens}`);
 ## Quality Control
 
 - Working State always fits in 250 to 750 tokens
-- The prompt never carries more than one copy of the same content
+- Project context is injected exactly once per agent call (via PromptBuilder, not duplicated in buildSystemPrompt)
+- ContextLoader caches VALARMIND.md and local.md per session (invalidated after /init)
+- stateCompact is always fresh (loaded from StateManager on every call)
 - Round trip JSON ↔ TOON validated with `@toon-format/toon`
 
 ## Implementation Roadmap
 
 ### Phase 1: Foundation
 
-**Objective:** Create base structure.
-
-**Tasks:**
-
-- [ ] Create directory structure `.valarmind/memory/`, `schemas/`, `jobs/`
-- [ ] Create `state.schema.json` with JSON Schema
-
-**Files:**
-
-- `.valarmind/memory/schemas/state.schema.json`
-
-**Completion criteria:** Schema validated with Ajv or similar.
-
----
+- [x] Directory structure `.valarmind/memory/`, `schemas/`
+- [x] JSON Schema for state (`state.schema.json`)
 
 ### Phase 2: Working State
 
-**Objective:** Persistence and compaction of operational state.
-
-**Dependencies:** Phase 1.
-
-**Tasks:**
-
-- [ ] Install `@toon-format/toon` via bun
-- [ ] Implement read/write of `state.json` with validation
-- [ ] Implement `compact.ts` that generates `state.toon` using the official package
-- [ ] Validate round trip JSON → TOON → JSON
-
-**Files:**
-
-- `.valarmind/memory/state.json`
-- `.valarmind/memory/jobs/compact.ts`
-
-**Completion criteria:** `bun run compact` generates `state.toon`, round trip passes.
-
----
+- [x] `@toon-format/toon` for encoding/decoding
+- [x] StateManager: read/write `state.json` with validation and caching
+- [x] Compactor: `compactState()` generates TOON from state
+- [x] Round trip JSON → TOON → JSON validated
 
 ### Phase 3: Prompt Assembly
 
-**Objective:** Assemble prompt with token budget.
-
-**Dependencies:** Phase 2.
-
-**Tasks:**
-
-- [ ] Implement token counting (via OpenAI API)
-- [ ] Implement order: system → state → conversation → task
-- [ ] Implement cutoff policy (compact state → summarize conversation)
-- [ ] Generate JSON manifest
-
-**Files:**
-
-- `.valarmind/memory/jobs/prompt.ts`
-- `src/memory/tokenCounter.ts`
-- `src/memory/promptBuilder.ts`
-
-**Completion criteria:** Prompt generated with manifest, tokens within budget.
+- [x] Token counting (`src/llm/token-counter.ts`)
+- [x] PromptBuilder with prioritized sections and token budget (`src/llm/prompt-builder.ts`)
+- [x] AgentRunner uses PromptBuilder: System (priority 100) + Project Context (priority 80)
+- [x] ContextLoader with session caching for VALARMIND.md/local.md (`src/memory/context-loader.ts`)
+- [x] Cache invalidation after `/init`
+- [x] `excludeProjectContext` flag for Init Agent (prevents circular reference)

@@ -157,12 +157,11 @@ Agent specialized in codebase discovery and exploration. Read-only mode.
 
 | Tool | Permission | Usage |
 |------|------------|-------|
-| Glob | Read | Search files by pattern |
-| Grep | Read | Search content in files |
-| Read | Read | Read files |
-| TreeView | Read | Visualize directory structure |
-| GitDiff | Read | Analyze changes in commits/branches |
-| RepoMap | Read | Structural map of code (functions, classes, signatures) |
+| read_file | Read | Read files |
+| glob | Read | Search files by pattern |
+| grep | Read | Search content in files |
+| tree_view | Read | Visualize directory structure |
+| git_diff | Read | Analyze changes in commits/branches |
 
 ### Restrictions
 
@@ -211,13 +210,12 @@ Agent specialized in external internet research. Searches documentation, solutio
 
 | Tool | Permission | Usage |
 |------|------------|-------|
-| WebFetch | Read | Fetch URLs and convert HTML to Markdown |
-| Read | Read | Read local files for context |
-| Glob | Read | Search files by pattern |
-| Grep | Read | Search content in files |
-| MCPTools | Read | Access external tools via MCP (docs, APIs) |
+| read_file | Read | Read local files for context |
+| glob | Read | Search files by pattern |
+| grep | Read | Search content in files |
+| web_fetch | Read | Fetch URLs and convert HTML to Markdown |
 
-> **Web Search**: The Research Agent uses the OpenRouter `:online` model suffix for automatic web grounding. Search results are included inline by the model — no separate tool is needed.
+> **Web Search**: The Research Agent uses the OpenRouter `:online` model suffix (`modelSuffix: ':online'`) for automatic web grounding. Search results are included inline by the model — no separate tool is needed. MCP tools are available when configured (Research Agent has `*` access to all MCP servers).
 
 ### Restrictions
 
@@ -683,15 +681,21 @@ Agent specialized in generating and maintaining the `VALARMIND.md` file, the pro
 | Read | Read | Read manifests, configs, code, and docs |
 | Glob | Read | Find files by pattern |
 | Grep | Read | Search patterns in files |
-| Write | Write | Create/update VALARMIND.md |
 | TreeView | Read | Generate directory structure |
-| TokenCount | Read | Estimate content tokens |
+
+Note: The Init Agent does **not** write VALARMIND.md directly. It returns the generated content as text output, and the `/init` slash command handler writes it to disk. This separation keeps the agent focused on analysis and generation.
+
+### Context Isolation
+
+The Init Agent sets `excludeProjectContext = true`, meaning it does **not** receive the existing VALARMIND.md content in its prompt. This prevents circular reference — the agent generates fresh content based on project analysis, not biased by potentially outdated context.
+
+After `/init` writes the new file, `contextLoader.invalidate()` is called to clear the session cache, ensuring subsequent agent calls see the updated content.
 
 ### Restrictions
 
-- **Limited scope**: only VALARMIND.md and read files
+- **Read-only tools**: only reads files and generates content as text output
+- **No project context**: does not receive VALARMIND.md in prompt (avoids circular reference)
 - **Token limit**: target 2500-3600, hard cap 4800
-- **Preserves manual**: does not overwrite manually edited sections
 - **Conciseness**: prioritizes operational information, avoids verbosity
 
 ### Generation Workflow
@@ -937,6 +941,27 @@ sequenceDiagram
 
 ---
 
+## Prompt Construction
+
+Each agent's prompt is assembled by the `AgentRunner` via `PromptBuilder`:
+
+```
+PromptBuilder:
+  Section "System" (priority 100) ← agent.buildSystemPrompt(context)
+  Section "Project Context" (priority 80) ← context.projectContext (VALARMIND.md + local.md + state)
+  └── Skipped if agent.excludeProjectContext === true
+```
+
+| Agent | buildSystemPrompt returns | excludeProjectContext |
+|-------|---------------------------|----------------------|
+| Search, Test, Docs, QA | Base system prompt only | false (default) |
+| Code, Review | Base system prompt + conventions from workingState | false (default) |
+| Init | Base system prompt only | **true** (avoids circular reference) |
+
+The Orchestrator builds its own prompt directly (not via PromptBuilder), including `valarmindMd`, `localMd`, and `stateCompact`.
+
+---
+
 ## Agent Configuration
 
 ### Tool Limits per Agent
@@ -995,7 +1020,7 @@ const agentToolLimits: Record<AgentType, ToolPermissions> = {
   },
   init: {
     read: true,
-    write: true, // only VALARMIND.md
+    write: false, // returns content as text; /init handler writes the file
     execute: false,
     spawn: false,
     web: false,

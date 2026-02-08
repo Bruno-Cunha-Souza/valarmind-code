@@ -330,6 +330,7 @@ export class Orchestrator {
         const systemPrompt =
             ORCHESTRATOR_SYSTEM_PROMPT +
             (projectContext.valarmindMd ? `\n\n## Project\n${projectContext.valarmindMd}` : '') +
+            (projectContext.localMd ? `\n\n## Local Preferences\n${projectContext.localMd}` : '') +
             (projectContext.stateCompact ? `\n\n## Working State\n${projectContext.stateCompact}` : '')
 
         return { agentContext, systemPrompt, projectContext }

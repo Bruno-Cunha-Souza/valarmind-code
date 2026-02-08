@@ -52,7 +52,7 @@ export class AgentRunner {
         // Build system prompt with PromptBuilder
         const builder = new PromptBuilder()
         builder.add('System', agent.buildSystemPrompt(context), 100)
-        if (context.projectContext) {
+        if (context.projectContext && !agent.excludeProjectContext) {
             builder.add('Project Context', context.projectContext, 80)
         }
 

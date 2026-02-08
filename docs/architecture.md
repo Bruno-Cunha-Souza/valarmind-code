@@ -84,12 +84,19 @@ Input → Hook:UserPromptSubmit → Orchestrator classifica
 
 ### Agentic Loop (AgentRunner)
 ```
+PromptBuilder assembles system prompt:
+  1. agent.buildSystemPrompt(context) → System section (priority 100)
+  2. context.projectContext → Project Context section (priority 80, skipped if agent.excludeProjectContext)
+  3. builder.build(hardCap) → truncates lower-priority sections first if over budget
+
 system_prompt + task → loop(max_turns):
   LLM.chat(messages, tools) →
     stop? → return result
     tool_calls? → validate permissions → execute (error as text) → append to messages
   timeout/max_turns → partial result
 ```
+
+Note: `buildSystemPrompt()` returns only the agent's base instructions (plus conventions for Code/Review agents). Project context (VALARMIND.md + local.md + state) is injected separately by the runner via PromptBuilder, enabling intelligent truncation when the prompt exceeds the token budget.
 
 ## Comunicação Inter-Agentes
 
@@ -100,6 +107,19 @@ User → Orchestrator → [Search, Research] (paralelo) → Code → [Review, QA
 ```
 
 Profundidade máxima: 1. Sub-agentes não spawnam outros agentes.
+
+## Context Loading
+
+`ContextLoader` loads project context (VALARMIND.md, VALARMIND.local.md, state) for each orchestrator call.
+
+| Aspect | Behavior |
+|--------|----------|
+| VALARMIND.md + local.md | Cached after first read per session (static during session) |
+| stateCompact | Always loaded fresh (changes between calls via stateManager.update()) |
+| Cache invalidation | `contextLoader.invalidate()` called after `/init` writes new VALARMIND.md |
+| Orchestrator prompt | Includes valarmindMd + localMd + stateCompact in system prompt |
+| Agent prompt | projectContext injected by PromptBuilder (priority 80), not by buildSystemPrompt |
+| Init Agent | `excludeProjectContext = true` — prevents circular reference when regenerating VALARMIND.md |
 
 ## Quality Gates
 

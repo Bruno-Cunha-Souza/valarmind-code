@@ -41,10 +41,10 @@ describe('DocsAgent', () => {
         expect(prompt).toContain('documentation')
     })
 
-    it('includes project context in prompt', () => {
+    it('buildSystemPrompt does not include projectContext (injected by runner)', () => {
         const ctx = { ...baseContext, projectContext: 'Project docs style: markdown tables' }
         const prompt = agent.buildSystemPrompt(ctx)
-        expect(prompt).toContain('markdown tables')
+        expect(prompt).not.toContain('markdown tables')
     })
 
     it('has correct timeout', () => {
