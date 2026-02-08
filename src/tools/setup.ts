@@ -50,7 +50,7 @@ export function createToolRegistry(_config: ResolvedConfig, _logger: Logger, _fs
 
     registry.registerForAgent('qa', ['read_file', 'glob', 'grep', 'bash', 'git_diff'])
 
-    registry.registerForAgent('init', ['read_file', 'write_file', 'glob', 'grep', 'tree_view'])
+    registry.registerForAgent('init', ['read_file', 'glob', 'grep', 'tree_view'])
 
     return registry
 }

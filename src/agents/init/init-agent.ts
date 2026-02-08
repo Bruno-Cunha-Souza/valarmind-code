@@ -7,7 +7,11 @@ export class InitAgent extends BaseAgent {
     readonly type: AgentType = 'init'
 
     get allowedTools(): string[] {
-        return ['read_file', 'write_file', 'glob', 'grep', 'tree_view']
+        return ['read_file', 'glob', 'grep', 'tree_view']
+    }
+
+    get maxTokens(): number {
+        return 16384 // needs large output to return full VALARMIND.md content as text
     }
 
     get systemPrompt(): string {

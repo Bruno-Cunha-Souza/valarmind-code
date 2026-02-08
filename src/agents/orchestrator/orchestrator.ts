@@ -494,6 +494,14 @@ export class Orchestrator {
         return parts.join('\n\n')
     }
 
+    getLastTaskResults(): { agent: string; result: unknown; status: string }[] {
+        return this.taskManager.getTasks().map((t) => ({
+            agent: t.agent,
+            result: t.result,
+            status: t.status,
+        }))
+    }
+
     clearHistory(): void {
         this.conversationHistory = []
         this.pendingPlan = null

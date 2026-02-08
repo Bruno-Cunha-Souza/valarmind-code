@@ -67,6 +67,7 @@ export class AgentRunner {
                     model,
                     messages,
                     tools: tools.length > 0 ? tools : undefined,
+                    maxTokens: agent.maxTokens,
                     signal: controller.signal,
                 })
 
@@ -78,6 +79,16 @@ export class AgentRunner {
                     prompt: response.usage.promptTokens,
                     completion: response.usage.completionTokens,
                 })
+
+                // Output truncated with no tool calls — incomplete response
+                if (response.finishReason === 'length' && response.toolCalls.length === 0) {
+                    // Continue loop to give the model another chance, appending partial content
+                    if (response.content) {
+                        messages.push({ role: 'assistant', content: response.content })
+                        messages.push({ role: 'user', content: 'Your response was truncated. Please continue from where you stopped, and use the write_file tool to save the complete file.' })
+                    }
+                    continue
+                }
 
                 if (response.finishReason === 'stop' || response.toolCalls.length === 0) {
                     const duration = this.tracer.endSpan(span)

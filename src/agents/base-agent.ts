@@ -17,6 +17,10 @@ export abstract class BaseAgent {
         return 25
     }
 
+    get maxTokens(): number | undefined {
+        return undefined // use default from config
+    }
+
     abstract get allowedTools(): string[]
 
     get modelSuffix(): string | undefined {

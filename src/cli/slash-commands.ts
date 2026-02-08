@@ -65,54 +65,119 @@ const commands: SlashCommand[] = [
                 tasks: [
                     {
                         agent: 'search',
-                        description: `Analyze project structure and metadata:
+                        description: `Analyze project structure, metadata, and existing documentation:
 1. Use tree_view to get directory structure (depth 3)
-2. Read package.json for project info, scripts, and top-level dependencies
+2. Read package.json — extract ALL fields: name, version, description, scripts (every script), dependencies with EXACT versions (e.g. "^1.2.3" not "-"), devDependencies with EXACT versions
 3. Read README.md for project description and objective
 4. Read tsconfig.json or equivalent compiler config
-5. Glob for config files: biome.json, .eslintrc*, .prettierrc*, jest.config*, vitest.config*
+5. Glob for config files: biome.json, .eslintrc*, .prettierrc*, jest.config*, vitest.config* — read each found file
+6. Glob for docs/*.md — list all documentation files and read key ones (architecture, general)
+7. Read CLAUDE.md, AGENTS.md, or .cursorrules if they exist (existing AI context)
+8. Read .env.example or .env.template if they exist (environment variables)
+9. Read src/cli/slash-commands.ts — extract ALL slash command names and descriptions from the SlashCommand[] array (commands like /help, /status, /agents, /clear, /init, /compact, /plan, /approve, /reject, /tasks, /undo, /diff, /commit, /model, /settings, /exit)
 
-Return a structured summary with: project description, tech stack, available scripts/commands, directory tree.`,
+Return a structured summary with: project description, tech stack, available scripts/commands, ALL slash commands with descriptions, directory tree, documentation index, environment variables, existing AI context highlights, EXACT dependency versions.`,
                         excludeFromSummary: true,
                     },
                     {
                         agent: 'search',
-                        description: `Analyze code architecture and design patterns:
-1. Glob src/**/*.ts (or main source directory) to map file structure
+                        description: `Analyze code architecture, design patterns, and workflows:
+1. Glob src/**/*.ts to map file structure
 2. Grep for exported classes, interfaces, and key functions
 3. Read entry points (src/index.ts, src/main.ts, src/app.ts, or similar)
-4. Identify architectural patterns (layers, modules, services)
+4. Read src/core/container.ts — extract ALL properties from Container interface (lines 26-49): config, logger, eventBus, tracer, traceExporter, fs, llmClient, toolRegistry, toolExecutor, agentRegistry, agentRunner, stateManager, contextLoader, hookRunner, permissionManager, orchestrator, metricsCollector, mcpManager, pluginManager, sandboxManager. Note each property's type and source file.
+5. Grep for 'type HookName' in src/hooks/ — extract the EXACT hook names from the union type (expected: UserPromptSubmit, PreToolUse, PostToolUse, PermissionRequest, PreCompact, SessionEnd)
+6. Grep for 'extends BaseAgent' in src/agents/ — for EACH agent file found, read it and extract: class name, allowedTools array, timeout values
+7. Read src/agents/runner.ts — understand agent execution flow (how agents are spawned, how tools are provided, prompt construction)
+8. Read src/llm/prompt-builder.ts — understand prompt construction (sections, priorities, token budget)
+9. Read src/agents/orchestrator/orchestrator.ts — understand orchestration flow (planning, task dispatch, inter-agent communication)
+10. Grep for inter-module communication: EventBus, EventEmitter, message, dispatch, subscribe
 
-Return a structured summary with: main modules and responsibilities, architectural pattern, key entry points, design patterns.`,
+Return a structured summary with: ALL Container properties with their source paths, ALL hook names from HookName type, ALL agents with their allowedTools arrays, architectural pattern, main execution flow, prompt construction details, orchestration flow.`,
                         excludeFromSummary: true,
                     },
                     {
                         agent: 'search',
-                        description: `Analyze dependencies, practices, and security:
-1. Read package.json dependencies and devDependencies for key libraries and versions
-2. Grep for authentication/authorization patterns (auth, jwt, session, password, bcrypt)
-3. Grep for test patterns (describe, it, test, expect) to identify test framework
-4. Glob for CI/CD configs (.github/workflows/*, Dockerfile, docker-compose*)
-5. Glob for .env.example or environment documentation
+                        description: `Analyze dependencies, auth flow, practices, security, integrations, and conventions:
+1. Read package.json dependencies and devDependencies — extract EXACT version strings (e.g. "^1.2.3"), not just package names
+2. Authentication flow — read these SPECIFIC files in order:
+   a. src/auth/credentials.ts — extract functions: loadCredentials, saveCredentials, removeCredentials, maskApiKey
+   b. src/config/defaults.ts — extract CREDENTIALS_FILE path (~/.config/valarmind/credentials.json), CONFIG_DIR, DEFAULT_CONFIG
+   c. Grep for 'apiKey' in src/config/schema.ts — find where API key is resolved
+   d. Document the EXACT priority order: 1. --key CLI flag, 2. VALARMIND_API_KEY env var, 3. ~/.config/valarmind/credentials.json
+3. Read biome.json — extract ALL formatting rules: indentStyle, indentWidth, lineWidth, semicolons, quoteStyle, trailingComma
+4. Grep for test patterns (describe, it, test, expect) to identify test framework and coverage requirements
+5. Glob for CI/CD configs (.github/workflows/*, Dockerfile, docker-compose*)
+6. Glob for .env.example or environment documentation
+7. Grep for external API calls, SDK usage (fetch, axios, http, client, webhook)
+8. Read src/mcp/manager.ts — understand MCP server management
+9. Analyze naming conventions: are files kebab-case? Classes PascalCase? Check import style (relative vs absolute)
 
-Return a structured summary with: key dependencies with versions, testing framework, security-sensitive areas, CI/CD setup.`,
+Return a structured summary with: ALL dependencies with EXACT versions, auth flow with EXACT priority order and file paths, formatting rules from biome.json, testing framework and practices, security-sensitive areas with specific files, MCP setup details, naming conventions.`,
+                        excludeFromSummary: true,
+                    },
+                    {
+                        agent: 'search',
+                        description: `Analyze core code for snippets, patterns, and troubleshooting:
+1. Read these SPECIFIC core files and extract 2-3 code snippets (10-20 lines each) that show the project's key patterns:
+   a. src/core/container.ts — how dependencies are wired (createContainer function)
+   b. src/agents/runner.ts — how agents execute (the main run loop)
+   c. src/llm/prompt-builder.ts — how prompts are built (section priorities, token budget)
+   d. src/agents/orchestrator/orchestrator.ts — how tasks are dispatched to agents
+2. For each snippet, include the EXACT file path and line numbers as a comment: /* src/path/file.ts:10-30 */
+3. Grep for 'TODO|FIXME|HACK|WARN' in src/ — extract the line + surrounding context for each match
+4. Grep for common error messages: 'API key', 'not found', 'failed to', 'invalid', 'timeout', 'permission denied'
+5. Look for troubleshooting patterns: diagnostic commands (/status, /agents), debug flags (logLevel), health checks
+
+Return a structured summary with: 2-3 snippets with /* src/path:lines */ format, list of TODO/FIXME/HACK items with file paths, common error messages with probable causes and solutions, diagnostic mechanisms available.`,
                         excludeFromSummary: true,
                     },
                     {
                         agent: 'init',
-                        description: `Generate VALARMIND.md using the pre-gathered search results from context.
-The search agents have already analyzed the project. Use their findings (provided in TOON format in the context) to write a comprehensive VALARMIND.md.
+                        description: `Generate a comprehensive VALARMIND.md using the pre-gathered search results from context.
+The search agents have already analyzed the project in depth. Use their findings (provided in TOON format in the context) to write a rich, project-specific VALARMIND.md.
 
-IMPORTANT: You MUST use the write_file tool to save the file as VALARMIND.md in the project root directory.
-After writing, respond with a brief confirmation message (e.g. "VALARMIND.md generated with X sections"). Do NOT output the file content in your response.
+Focus on ACTIONABLE, NON-OBVIOUS information. Do not repeat what is obvious from package.json or file names.
+Include deeper details: workflows, auth flows, agent architecture, memory/state, conventions, environment variables, troubleshooting, and key code snippets.
+If the project has existing AI context (CLAUDE.md, AGENTS.md), reference it and incorporate its best insights.
+
+MANDATORY RULES:
+- Extract EXACT versions from search results for ALL tables (Stack, Dependencies). NEVER use '-' as version.
+- NEVER infer file paths — only use paths explicitly found in search data. NEVER add '(inferred)'.
+- Use TABLE format for: Agent Architecture, Hooks, Endpoints (slash commands), Stack, Dependencies, Commands.
+- NEVER use speculative language: "likely", "probably", "possibly", "potentially", "appears to".
+- Include Snippets section with /* src/file.ts:lines */ comments from search task 3 results.
+- Include Troubleshooting section with Error | Cause | Solution table from search task 3 results.
+- Auth Flow must include the exact priority order: 1. --key flag, 2. VALARMIND_API_KEY env, 3. credentials.json.
+
+IMPORTANT: Return the complete VALARMIND.md content directly as your text response. Start with "# VALARMIND.md" on the first line. Do NOT wrap in code fences. Do NOT add preamble or postamble — ONLY the raw markdown. The caller handles saving the file.
 
 Only use your own tools (glob, grep, read_file) if the search results are missing critical information.`,
-                        dependsOn: [0, 1, 2],
+                        dependsOn: [0, 1, 2, 3],
                         toonCompact: true,
                     },
                 ],
             }
-            return container.orchestrator.executePrebuiltPlan(plan)
+            await container.orchestrator.executePrebuiltPlan(plan)
+
+            // Extract init agent's raw output and write to file
+            const valarmindPath = `${container.config.projectDir}/VALARMIND.md`
+            const taskResults = container.orchestrator.getLastTaskResults()
+            const initResult = taskResults.find((t) => t.agent === 'init')
+            const content = typeof initResult?.result === 'string' ? initResult.result : null
+
+            if (content && content.includes('# ')) {
+                await container.fs.writeText(valarmindPath, content)
+                const lineCount = content.split('\n').length
+                return `VALARMIND.md generated (${lineCount} lines). Saved to ${valarmindPath}`
+            }
+
+            // Fallback: check if file was somehow written by the agent via tools
+            if (await container.fs.exists(valarmindPath)) {
+                return `VALARMIND.md generated. Saved to ${valarmindPath}`
+            }
+
+            return '⚠ VALARMIND.md was not generated. The init agent returned no content. Try running /init again.'
         },
     },
     {

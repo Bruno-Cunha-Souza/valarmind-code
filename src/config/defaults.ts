@@ -12,6 +12,7 @@ export const AVAILABLE_MODELS: ModelOption[] = [
     { id: 'anthropic/claude-sonnet-4.5', label: 'Claude Sonnet 4.5', description: 'Best for everyday tasks' },
     { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Fast and cost-effective' },
     { id: 'openai/gpt-5.2-codex', label: 'GPT 5.2 Codex', description: 'Specialized for code generation' },
+    { id: 'moonshotai/kimi-k2.5', label: 'Kimi K2.5', description: 'Strong reasoning and code generation' },
 ]
 
 export const MODEL_ALIASES: Record<string, string> = {
@@ -20,6 +21,7 @@ export const MODEL_ALIASES: Record<string, string> = {
     sonnet: 'anthropic/claude-sonnet-4.5',
     gemini: 'google/gemini-2.5-flash',
     gpt: 'openai/gpt-5.2-codex',
+    kimi: 'moonshotai/kimi-k2.5',
 }
 
 export function getModelLabel(modelId: string): string {
