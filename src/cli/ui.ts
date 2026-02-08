@@ -20,7 +20,7 @@ export function formatAgentResult(agent: string, summary: string): string {
 }
 
 export function formatError(message: string): string {
-    return `${colors.error('Erro:')} ${message}`
+    return `${colors.error('Error:')} ${message}`
 }
 
 export function formatTokenUsage(prompt: number, completion: number): string {

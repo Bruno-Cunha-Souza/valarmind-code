@@ -21,43 +21,43 @@ interface SetupResult {
 }
 
 /**
- * Fluxo interativo de primeiro uso: solicita API key, valida, escolhe modelo e salva.
+ * Interactive first-use flow: requests API key, validates, selects model, and saves.
  */
 async function setupFirstUse(fs: FileSystem): Promise<SetupResult | null> {
-    clack.intro(colors.brand('ValarMind Code — Setup Inicial'))
+    clack.intro(colors.brand('ValarMind Code — Initial Setup'))
 
-    console.log(colors.dim('Nenhuma API key encontrada. Vamos configurar!'))
-    console.log(colors.dim('Você precisa de uma API key do OpenRouter (https://openrouter.ai/keys)\n'))
+    console.log(colors.dim('No API key found. Let\'s set it up!'))
+    console.log(colors.dim('You need an OpenRouter API key (https://openrouter.ai/keys)\n'))
 
     const apiKey = await askApiKey()
     if (!apiKey) {
-        clack.outro(colors.warn('Setup cancelado. Execute novamente quando tiver sua API key.'))
+        clack.outro(colors.warn('Setup cancelled. Run again when you have your API key.'))
         return null
     }
 
     const spinner = clack.spinner()
-    spinner.start('Validando API key...')
+    spinner.start('Validating API key...')
 
     const result = await validateApiKey(apiKey)
     if (!result.ok) {
-        spinner.stop(colors.error('Key inválida'))
+        spinner.stop(colors.error('Invalid key'))
         console.log(colors.error(result.error))
-        console.log(colors.dim('\nVerifique sua key e tente novamente.'))
+        console.log(colors.dim('\nCheck your key and try again.'))
         return null
     }
 
-    spinner.stop(colors.success(`Key válida — ${result.value.length} modelos disponíveis`))
+    spinner.stop(colors.success(`Valid key — ${result.value.length} models available`))
 
     await saveCredentials(fs, apiKey)
 
-    // Seleção de modelo
+    // Model selection
     const model = await askModel()
     if (model) {
         await fs.mkdir(CONFIG_DIR)
         await fs.writeJSON(GLOBAL_CONFIG_FILE, { model })
     }
 
-    clack.outro(colors.success('Setup concluído!'))
+    clack.outro(colors.success('Setup complete!'))
 
     return { apiKey, model: model ?? undefined }
 }
@@ -67,15 +67,15 @@ export function createProgram(): Command {
 
     program
         .name('valarmind-code')
-        .description('CLI multi-agente para desenvolvimento de software')
+        .description('Multi-agent CLI for software development')
         .version('0.1.0')
-        .option('-p, --prompt <text>', 'Executa um prompt único')
-        .option('-m, --model <model>', 'Modelo LLM a usar')
-        .option('-k, --key <key>', 'API key do OpenRouter')
-        .option('--plan', 'Modo plan (sem execução)')
-        .option('-y, --yes', 'Auto-approve tudo')
-        .option('--sandbox', 'Modo sandbox (restrito)')
-        .option('--debug', 'Ativa debug logging')
+        .option('-p, --prompt <text>', 'Run a single prompt')
+        .option('-m, --model <model>', 'LLM model to use')
+        .option('-k, --key <key>', 'OpenRouter API key')
+        .option('--plan', 'Plan mode (no execution)')
+        .option('-y, --yes', 'Auto-approve all')
+        .option('--sandbox', 'Sandbox mode (restricted)')
+        .option('--debug', 'Enable debug logging')
         .action(async (options) => {
             try {
                 const fs = new BunFileSystem()
@@ -119,16 +119,16 @@ export function createProgram(): Command {
 
     program
         .command('auth')
-        .description('Configura autenticação OpenRouter')
-        .option('-k, --key <key>', 'Set API key diretamente')
-        .option('--logout', 'Remove credenciais')
-        .option('--status', 'Mostra status da autenticação')
-        .option('--validate', 'Revalida key existente')
+        .description('Configure OpenRouter authentication')
+        .option('-k, --key <key>', 'Set API key directly')
+        .option('--logout', 'Remove credentials')
+        .option('--status', 'Show authentication status')
+        .option('--validate', 'Re-validate existing key')
         .action(authCommand)
 
     program
         .command('init')
-        .description('Gera VALARMIND.md para o projeto')
+        .description('Generate VALARMIND.md for the project')
         .action(async () => {
             const fs = new BunFileSystem()
             const credKey = await loadCredentials(fs)
@@ -146,7 +146,7 @@ export function createProgram(): Command {
 
     program
         .command('config [key] [value]')
-        .description('Gerencia configuração')
+        .description('Manage configuration')
         .action(async (key, value) => {
             const fs = new BunFileSystem()
             const config = await loadConfig({ fs })
@@ -154,7 +154,7 @@ export function createProgram(): Command {
             await configCommand(container, key, value)
         })
 
-    program.command('doctor').description('Diagnóstico do ambiente').action(doctorCommand)
+    program.command('doctor').description('Environment diagnostics').action(doctorCommand)
 
     return program
 }

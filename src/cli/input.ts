@@ -5,15 +5,15 @@ const MAX_VISIBLE = 15
 let keypressReady = false
 
 /**
- * Prompt de input customizado com sugestões inline de slash commands.
- * Quando o usuário digita `/`, mostra a lista de comandos em tempo real,
- * filtrando conforme digita. Setas navegam, Tab completa, Enter submete.
+ * Custom input prompt with inline slash command suggestions.
+ * When the user types `/`, shows the command list in real time,
+ * filtering as they type. Arrows navigate, Tab completes, Enter submits.
  *
- * Usa readline.emitKeypressEvents para parsear escape sequences (setas, etc.)
- * corretamente, mesmo quando o runtime entrega os bytes em chunks separados.
+ * Uses readline.emitKeypressEvents to correctly parse escape sequences (arrows, etc.),
+ * even when the runtime delivers bytes in separate chunks.
  */
-export async function promptInput(placeholder = 'Pergunte qualquer coisa...'): Promise<string | null> {
-    // Fallback para non-TTY (pipe, CI)
+export async function promptInput(placeholder = 'Ask anything...'): Promise<string | null> {
+    // Fallback for non-TTY (pipe, CI)
     if (!process.stdin.isTTY) {
         const { createInterface } = await import('node:readline')
         const rl = createInterface({ input: process.stdin, output: process.stdout })
@@ -25,7 +25,7 @@ export async function promptInput(placeholder = 'Pergunte qualquer coisa...'): P
         })
     }
 
-    // emitKeypressEvents é idempotente internamente
+    // emitKeypressEvents is internally idempotent
     if (!keypressReady) {
         emitKeypressEvents(process.stdin)
         keypressReady = true
@@ -215,7 +215,7 @@ export async function promptInput(placeholder = 'Pergunte qualquer coisa...'): P
                 return
             }
 
-            // Ctrl+U: limpa linha
+            // Ctrl+U: clear line
             if (key.ctrl && key.name === 'u') {
                 buffer = ''
                 cursor = 0
@@ -224,7 +224,7 @@ export async function promptInput(placeholder = 'Pergunte qualquer coisa...'): P
                 return
             }
 
-            // Ctrl+W: apaga palavra anterior
+            // Ctrl+W: delete previous word
             if (key.ctrl && key.name === 'w') {
                 if (cursor > 0) {
                     const before = buffer.slice(0, cursor)
@@ -237,7 +237,7 @@ export async function promptInput(placeholder = 'Pergunte qualquer coisa...'): P
                 return
             }
 
-            // Caractere imprimível
+            // Printable character
             if (str && !key.ctrl && !key.meta) {
                 buffer = buffer.slice(0, cursor) + str + buffer.slice(cursor)
                 cursor += str.length

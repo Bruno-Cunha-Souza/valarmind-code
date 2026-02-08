@@ -67,7 +67,7 @@ describe('Slash Commands', () => {
     it('/help lists all commands', async () => {
         const container = createMockContainer()
         const result = await handleSlashCommand('/help', container)
-        expect(result).toContain('Comandos disponíveis')
+        expect(result).toContain('Available commands')
         expect(result).toContain('/help')
         expect(result).toContain('/plan')
         expect(result).toContain('/approve')
@@ -102,20 +102,20 @@ describe('Slash Commands', () => {
     it('/clear clears history', async () => {
         const container = createMockContainer()
         const result = await handleSlashCommand('/clear', container)
-        expect(result).toBe('Histórico limpo.')
+        expect(result).toBe('History cleared.')
         expect(container.orchestrator.clearHistory).toHaveBeenCalled()
     })
 
     it('/plan requires args', async () => {
         const container = createMockContainer()
         const result = await handleSlashCommand('/plan', container)
-        expect(result).toContain('Uso:')
+        expect(result).toContain('Usage:')
     })
 
     it('/plan with args creates plan', async () => {
         const container = createMockContainer()
         const result = await handleSlashCommand('/plan test task', container)
-        expect(result).toContain('Plano:')
+        expect(result).toContain('Plan:')
         expect(result).toContain('Test plan')
     })
 
@@ -128,14 +128,14 @@ describe('Slash Commands', () => {
     it('/reject rejects plan', async () => {
         const container = createMockContainer()
         const result = await handleSlashCommand('/reject', container)
-        expect(result).toBe('Plano rejeitado.')
+        expect(result).toBe('Plan rejected.')
     })
 
     it('/reject without plan returns message', async () => {
         const container = createMockContainer()
         ;(container.orchestrator as any).rejectPendingPlan = mock(() => false)
         const result = await handleSlashCommand('/reject', container)
-        expect(result).toContain('Nenhum plano pendente')
+        expect(result).toContain('No pending plan')
     })
 
     it('/tasks lists pending plan tasks', async () => {
@@ -148,7 +148,7 @@ describe('Slash Commands', () => {
     it('/commit requires message', async () => {
         const container = createMockContainer()
         const result = await handleSlashCommand('/commit', container)
-        expect(result).toContain('Uso:')
+        expect(result).toContain('Usage:')
     })
 
     it('returns null for unknown command', async () => {

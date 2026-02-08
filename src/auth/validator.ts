@@ -14,14 +14,14 @@ export async function validateApiKey(apiKey: string, baseURL = 'https://openrout
 
         if (!response.ok) {
             if (response.status === 401 || response.status === 403) {
-                return err('API key inválida ou sem permissão')
+                return err('Invalid API key or insufficient permissions')
             }
-            return err(`Erro ao validar: HTTP ${response.status}`)
+            return err(`Validation error: HTTP ${response.status}`)
         }
 
         const data = (await response.json()) as { data: ModelInfo[] }
         return ok(data.data ?? [])
     } catch (error) {
-        return err(`Falha na conexão: ${(error as Error).message}`)
+        return err(`Connection failed: ${(error as Error).message}`)
     }
 }

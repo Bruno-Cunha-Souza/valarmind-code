@@ -4,10 +4,10 @@ import { colors } from './ui.js'
 
 export async function askApiKey(): Promise<string | null> {
     const result = await clack.text({
-        message: 'Cole sua API key do OpenRouter:',
+        message: 'Paste your OpenRouter API key:',
         placeholder: 'sk-or-v1-...',
         validate(value) {
-            if (!value.startsWith('sk-or-')) return 'API key deve começar com "sk-or-"'
+            if (!value.startsWith('sk-or-')) return 'API key must start with "sk-or-"'
         },
     })
 
@@ -17,7 +17,7 @@ export async function askApiKey(): Promise<string | null> {
 
 export async function askModel(currentModelId?: string): Promise<string | null> {
     const result = await clack.select({
-        message: 'Selecionar modelo',
+        message: 'Select model',
         options: AVAILABLE_MODELS.map((m) => ({
             value: m.id,
             label: m.id === currentModelId ? `${m.label} \u2713` : m.label,

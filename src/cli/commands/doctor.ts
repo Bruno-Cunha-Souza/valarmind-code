@@ -21,7 +21,7 @@ export async function doctorCommand(): Promise<void> {
         const { stdout } = await execaCommand('bun --version')
         checks.push({ name: 'Bun', status: 'ok', message: `v${stdout.trim()}` })
     } catch {
-        checks.push({ name: 'Bun', status: 'error', message: 'Não encontrado' })
+        checks.push({ name: 'Bun', status: 'error', message: 'Not found' })
     }
 
     // Git
@@ -29,16 +29,16 @@ export async function doctorCommand(): Promise<void> {
         const { stdout } = await execaCommand('git --version')
         checks.push({ name: 'Git', status: 'ok', message: stdout.trim() })
     } catch {
-        checks.push({ name: 'Git', status: 'warn', message: 'Não encontrado (opcional)' })
+        checks.push({ name: 'Git', status: 'warn', message: 'Not found (optional)' })
     }
 
     // ripgrep
     try {
         const { stdout } = await execaCommand('rg --version')
-        const version = stdout.split('\n')[0] ?? 'encontrado'
+        const version = stdout.split('\n')[0] ?? 'found'
         checks.push({ name: 'ripgrep', status: 'ok', message: version })
     } catch {
-        checks.push({ name: 'ripgrep', status: 'warn', message: 'Não encontrado (fallback grep)' })
+        checks.push({ name: 'ripgrep', status: 'warn', message: 'Not found (grep fallback)' })
     }
 
     // API key
@@ -46,19 +46,19 @@ export async function doctorCommand(): Promise<void> {
     if (key) {
         const result = await validateApiKey(key)
         if (result.ok) {
-            checks.push({ name: 'API Key', status: 'ok', message: 'Válida' })
+            checks.push({ name: 'API Key', status: 'ok', message: 'Valid' })
         } else {
             checks.push({ name: 'API Key', status: 'error', message: result.error })
         }
     } else {
-        checks.push({ name: 'API Key', status: 'error', message: 'Não configurada' })
+        checks.push({ name: 'API Key', status: 'error', message: 'Not configured' })
     }
 
     // VALARMIND.md
     if (await fs.exists('VALARMIND.md')) {
-        checks.push({ name: 'VALARMIND.md', status: 'ok', message: 'Encontrado' })
+        checks.push({ name: 'VALARMIND.md', status: 'ok', message: 'Found' })
     } else {
-        checks.push({ name: 'VALARMIND.md', status: 'warn', message: 'Não encontrado (execute /init)' })
+        checks.push({ name: 'VALARMIND.md', status: 'warn', message: 'Not found (run /init)' })
     }
 
     // Display results
@@ -70,8 +70,8 @@ export async function doctorCommand(): Promise<void> {
     const errors = checks.filter((c) => c.status === 'error')
     console.log('')
     if (errors.length === 0) {
-        console.log(colors.success('Tudo ok!'))
+        console.log(colors.success('All good!'))
     } else {
-        console.log(colors.warn(`${errors.length} problema(s) encontrado(s).`))
+        console.log(colors.warn(`${errors.length} issue(s) found.`))
     }
 }

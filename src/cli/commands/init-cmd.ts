@@ -6,7 +6,7 @@ export async function initCommand(container: Container): Promise<void> {
     clack.intro(colors.brand('ValarMind Code Init'))
 
     const spinner = clack.spinner()
-    spinner.start('Analisando projeto...')
+    spinner.start('Analyzing project...')
 
     try {
         const result = await container.orchestrator.process(
@@ -16,11 +16,11 @@ export async function initCommand(container: Container): Promise<void> {
                 'Design, Practices, Commands, Project Core, Sensitive Points, TREE).'
         )
 
-        spinner.stop(colors.success('VALARMIND.md gerado'))
+        spinner.stop(colors.success('VALARMIND.md generated'))
         console.log(result)
-        clack.outro('Init completo!')
+        clack.outro('Init complete!')
     } catch (error) {
-        spinner.stop(colors.error('Falha'))
+        spinner.stop(colors.error('Failed'))
         console.error(colors.error((error as Error).message))
     }
 }

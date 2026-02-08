@@ -2,29 +2,29 @@ import type { AgentType } from '../core/types.js'
 import type { TypedEventEmitter } from '../core/events.js'
 
 const AGENT_LABELS: Record<AgentType, string> = {
-    orchestrator: 'Orquestrando...',
-    search: 'Buscando no código...',
-    research: 'Pesquisando na web...',
-    code: 'Escrevendo código...',
-    review: 'Revisando alterações...',
-    test: 'Executando testes...',
-    docs: 'Gerando documentação...',
-    qa: 'Verificando qualidade...',
-    init: 'Analisando projeto...',
+    orchestrator: 'Orchestrating...',
+    search: 'Searching code...',
+    research: 'Searching the web...',
+    code: 'Writing code...',
+    review: 'Reviewing changes...',
+    test: 'Running tests...',
+    docs: 'Generating docs...',
+    qa: 'Checking quality...',
+    init: 'Analyzing project...',
 }
 
 const TOOL_LABELS: Record<string, string> = {
-    glob: 'Buscando arquivos...',
-    grep: 'Pesquisando padrões...',
-    read_file: 'Lendo arquivos...',
-    edit_file: 'Editando código...',
-    write_file: 'Escrevendo arquivo...',
-    bash: 'Executando comando...',
-    web_search: 'Pesquisando na web...',
-    web_fetch: 'Carregando página...',
-    tree_view: 'Mapeando estrutura...',
-    git_diff: 'Analisando diferenças...',
-    repo_map: 'Mapeando repositório...',
+    glob: 'Searching files...',
+    grep: 'Searching patterns...',
+    read_file: 'Reading files...',
+    edit_file: 'Editing code...',
+    write_file: 'Writing file...',
+    bash: 'Running command...',
+    web_search: 'Searching the web...',
+    web_fetch: 'Loading page...',
+    tree_view: 'Mapping structure...',
+    git_diff: 'Analyzing diff...',
+    repo_map: 'Mapping repository...',
 }
 
 interface Spinner {
@@ -50,7 +50,7 @@ export function createProgressTracker(
     const onAgentComplete = (data: { agentType: AgentType; taskId: string; duration: number }) => {
         if (data.agentType === 'orchestrator') return
         const secs = (data.duration / 1000).toFixed(1)
-        spinner.message(`${AGENT_LABELS[data.agentType]?.replace('...', '')} concluído (${secs}s)`)
+        spinner.message(`${AGENT_LABELS[data.agentType]?.replace('...', '')} done (${secs}s)`)
         currentAgent = null
     }
 

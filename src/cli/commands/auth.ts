@@ -17,7 +17,7 @@ export async function authCommand(options: AuthOptions): Promise<void> {
 
     if (options.logout) {
         await removeCredentials(fs)
-        console.log(colors.success('Credenciais removidas.'))
+        console.log(colors.success('Credentials removed.'))
         return
     }
 
@@ -25,9 +25,9 @@ export async function authCommand(options: AuthOptions): Promise<void> {
         const key = await loadCredentials(fs)
         if (key) {
             console.log(`API Key: ${maskApiKey(key)}`)
-            console.log(colors.success('Autenticado'))
+            console.log(colors.success('Authenticated'))
         } else {
-            console.log(colors.warn('Não autenticado. Execute: valarmind auth'))
+            console.log(colors.warn('Not authenticated. Run: valarmind auth'))
         }
         return
     }
@@ -35,12 +35,12 @@ export async function authCommand(options: AuthOptions): Promise<void> {
     if (options.validate) {
         const key = await loadCredentials(fs)
         if (!key) {
-            console.log(colors.error('Nenhuma API key encontrada.'))
+            console.log(colors.error('No API key found.'))
             return
         }
         const result = await validateApiKey(key)
         if (result.ok) {
-            console.log(colors.success(`API key válida. ${result.value.length} modelos disponíveis.`))
+            console.log(colors.success(`API key valid. ${result.value.length} models available.`))
         } else {
             console.log(colors.error(result.error))
         }
@@ -55,39 +55,39 @@ export async function authCommand(options: AuthOptions): Promise<void> {
 
         const existingKey = await loadCredentials(fs)
         if (existingKey) {
-            console.log(colors.dim(`Key existente: ${maskApiKey(existingKey)}`))
-            const replace = await clack.confirm({ message: 'Substituir key existente?' })
+            console.log(colors.dim(`Existing key: ${maskApiKey(existingKey)}`))
+            const replace = await clack.confirm({ message: 'Replace existing key?' })
             if (clack.isCancel(replace) || !replace) {
-                clack.outro('Auth cancelado.')
+                clack.outro('Auth cancelled.')
                 return
             }
         }
 
         apiKey = (await askApiKey()) ?? undefined
         if (!apiKey) {
-            clack.outro('Auth cancelado.')
+            clack.outro('Auth cancelled.')
             return
         }
     }
 
     // Validate
     const spinner = clack.spinner()
-    spinner.start('Validando API key...')
+    spinner.start('Validating API key...')
 
     const result = await validateApiKey(apiKey)
     if (!result.ok) {
-        spinner.stop(colors.error('Key inválida'))
+        spinner.stop(colors.error('Invalid key'))
         console.log(colors.error(result.error))
         return
     }
 
-    spinner.stop(colors.success('Key válida'))
+    spinner.stop(colors.success('Valid key'))
 
     // Save
     await saveCredentials(fs, apiKey)
-    console.log(colors.success(`Salvo! ${result.value.length} modelos disponíveis.`))
+    console.log(colors.success(`Saved! ${result.value.length} models available.`))
 
     if (!options.key) {
-        clack.outro('Auth configurado com sucesso!')
+        clack.outro('Auth configured successfully!')
     }
 }
