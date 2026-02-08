@@ -1,0 +1,119 @@
+# Promptfoo eval configuration for ValarMind Code
+# Run: npx promptfoo eval -c scripts/eval/promptfoo.yaml
+
+description: ValarMind Code Intelligence Evals
+
+providers:
+  - id: openrouter
+    config:
+      apiKey: ${VALARMIND_API_KEY}
+      apiBaseUrl: https://openrouter.ai/api/v1
+
+prompts:
+  - id: orchestrator-routing
+    raw: |
+      You are the Orchestrator of ValarMind Code, a multi-agent CLI for software development.
+
+      Your role:
+      - Analyze the user's request and classify it (intent, scope, complexity)
+      - Create a plan with tasks to accomplish the goal
+      - Delegate tasks to specialist agents
+      - Synthesize results into a coherent response
+
+      Available agents:
+      | Agent    | Use for                                    |
+      |----------|--------------------------------------------|
+      | search   | Find files, code, patterns in codebase     |
+      | research | External info (docs, web, best practices)  |
+      | code     | Write or modify code                       |
+      | test     | Run or write tests                         |
+      | init     | Generate VALARMIND.md                      |
+      | review   | Code review: correctness, security, perf   |
+      | qa       | Run build, lint, typecheck, tests           |
+      | docs     | Generate/update documentation               |
+
+      For simple questions, answer directly without delegating.
+      For code tasks, always search first to understand context.
+
+      Respond in JSON format when delegating:
+      {"plan": "...", "tasks": [{"agent": "...", "description": "..."}]}
+
+      For direct answers, respond with plain text.
+
+      User request: {{prompt}}
+
+tests:
+  # Routing tests: ensure correct agent selection
+  - description: Search task routes to search agent
+    vars:
+      prompt: "Find all files that import the auth module"
+    assert:
+      - type: contains-json
+        value:
+          tasks:
+            - agent: search
+      - type: cost
+        threshold: 0.05
+
+  - description: Code task includes search + code agents
+    vars:
+      prompt: "Add input validation to the login form"
+    assert:
+      - type: contains-json
+        value:
+          tasks:
+            - agent: search
+      - type: contains-json
+        value:
+          tasks:
+            - agent: code
+      - type: cost
+        threshold: 0.05
+
+  - description: Direct question gets plain text answer
+    vars:
+      prompt: "What is dependency injection?"
+    assert:
+      - type: not-contains
+        value: '"tasks"'
+      - type: llm-rubric
+        value: "The response explains dependency injection clearly and concisely"
+
+  - description: Doc request routes to docs agent
+    vars:
+      prompt: "Update the README with installation instructions"
+    assert:
+      - type: contains-json
+        value:
+          tasks:
+            - agent: docs
+
+  - description: Test request routes to test agent
+    vars:
+      prompt: "Write unit tests for the auth service"
+    assert:
+      - type: contains-json
+        value:
+          tasks:
+            - agent: test
+
+  # Quality thresholds
+  - description: Complex task stays under token budget
+    vars:
+      prompt: "Refactor the authentication system to use JWT tokens"
+    assert:
+      - type: cost
+        threshold: 0.10
+      - type: latency
+        threshold: 10000
+
+  # Format compliance
+  - description: Plan has valid JSON structure
+    vars:
+      prompt: "Add dark mode support to the UI"
+    assert:
+      - type: is-json
+      - type: javascript
+        value: |
+          const parsed = JSON.parse(output);
+          return parsed.plan && Array.isArray(parsed.tasks) && parsed.tasks.length > 0;

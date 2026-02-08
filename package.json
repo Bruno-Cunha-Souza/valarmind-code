@@ -16,7 +16,11 @@
     "lint:fix": "biome check --write src/",
     "format": "biome format --write src/",
     "check": "biome check src/ && bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eval:record": "bun run scripts/eval/record-session.ts",
+    "eval:replay": "bun run scripts/eval/replay-session.ts",
+    "eval:run": "bun run scripts/eval/run-eval.ts",
+    "eval:promptfoo": "npx promptfoo eval -c scripts/eval/promptfoo.yaml"
   },
   "dependencies": {
     "@clack/prompts": "^0.9",
@@ -39,6 +43,7 @@
     "@biomejs/biome": "^2.3.14",
     "@types/bun": "^1",
     "@types/turndown": "^5.0.6",
+    "promptfoo": "^0.100",
     "typescript": "^5"
   },
   "engines": {
