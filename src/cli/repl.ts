@@ -12,7 +12,7 @@ export async function startREPL(container: Container): Promise<void> {
 
     console.log(banner())
     console.log(colors.dim(`Model: ${getModelLabel(container.config.model)}`))
-    console.log(colors.dim('Type /help for commands, /exit to quit\n'))
+    console.log(colors.dim('Digite /help para comandos, /exit para sair\n'))
 
     const usePlanMode = container.config.planMode
 
@@ -21,7 +21,7 @@ export async function startREPL(container: Container): Promise<void> {
 
         if (input === null) {
             await container.hookRunner.run('SessionEnd', { VALARMIND_SESSION_ID: sessionId })
-            console.log(colors.dim('Bye!'))
+            console.log(colors.dim('Até logo!'))
             break
         }
 
@@ -57,7 +57,7 @@ export async function startREPL(container: Container): Promise<void> {
                         console.clear()
                         console.log(banner())
                         console.log(colors.dim(`Model: ${getModelLabel(container.config.model)}`))
-                        console.log(colors.dim('Type /help for commands, /exit to quit\n'))
+                        console.log(colors.dim('Digite /help para comandos, /exit para sair\n'))
                     }
                     console.log(result)
                 } else {

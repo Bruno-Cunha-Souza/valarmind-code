@@ -5,6 +5,17 @@ import type { FileSystem } from '../core/fs.js'
 import type { Logger } from '../logger/index.js'
 import type { WorkingState } from './types.js'
 
+function localISOString(): string {
+    const now = new Date()
+    const off = now.getTimezoneOffset()
+    const abs = Math.abs(off)
+    const sign = off <= 0 ? '+' : '-'
+    const hh = String(Math.floor(abs / 60)).padStart(2, '0')
+    const mm = String(abs % 60).padStart(2, '0')
+    const local = new Date(now.getTime() - off * 60_000)
+    return local.toISOString().replace('Z', `${sign}${hh}:${mm}`)
+}
+
 const WorkingStateSchema = z.object({
     schema_version: z.number(),
     updated_at: z.string(),
@@ -25,7 +36,7 @@ const WorkingStateSchema = z.object({
 function defaultState(): WorkingState {
     return {
         schema_version: 1,
-        updated_at: new Date().toISOString(),
+        updated_at: localISOString(),
         goal: '',
         now: '',
         decisions_recent: [],
@@ -64,7 +75,7 @@ export class StateManager {
     }
 
     async save(state: WorkingState): Promise<void> {
-        state.updated_at = new Date().toISOString()
+        state.updated_at = localISOString()
         const dir = path.dirname(this.statePath)
         await this.fs.mkdir(dir)
         await this.fs.writeJSON(this.statePath, state)

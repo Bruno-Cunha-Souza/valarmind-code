@@ -62,12 +62,13 @@ const commands: SlashCommand[] = [
         handler: async (container) => {
             const plan: Plan = {
                 plan: 'Analyze project with parallel search agents and generate VALARMIND.md',
+                // 4 search tasks run in parallel (no inter-dependencies), then init task depends on all 4
                 tasks: [
                     {
                         agent: 'search',
                         description: `Analyze project structure, metadata, and existing documentation:
 1. Use tree_view to get directory structure (depth 3)
-2. Read package.json — extract ALL fields: name, version, description, scripts (every script), dependencies with EXACT versions (e.g. "^1.2.3" not "-"), devDependencies with EXACT versions
+2. Read package.json — extract fields: name, version, description, scripts (every script)
 3. Read README.md for project description and objective
 4. Read tsconfig.json or equivalent compiler config
 5. Glob for config files: biome.json, .eslintrc*, .prettierrc*, jest.config*, vitest.config* — read each found file
@@ -76,7 +77,7 @@ const commands: SlashCommand[] = [
 8. Read .env.example or .env.template if they exist (environment variables)
 9. Read src/cli/slash-commands.ts — extract ALL slash command names and descriptions from the SlashCommand[] array (commands like /help, /status, /agents, /clear, /init, /compact, /plan, /approve, /reject, /tasks, /undo, /diff, /commit, /model, /settings, /exit)
 
-Return a structured summary with: project description, tech stack, available scripts/commands, ALL slash commands with descriptions, directory tree, documentation index, environment variables, existing AI context highlights, EXACT dependency versions.`,
+Return a structured summary with: project description, tech stack, available scripts/commands, ALL slash commands with descriptions, directory tree, documentation index, environment variables, existing AI context highlights.`,
                         excludeFromSummary: true,
                     },
                     {
@@ -300,7 +301,7 @@ Only use your own tools (glob, grep, read_file) if the search results are missin
     },
     {
         name: '/model',
-        description: 'Switch model',
+        description: 'Trocar modelo',
         handler: async (container, args) => {
             const arg = args.trim()
 
@@ -321,25 +322,25 @@ Only use your own tools (glob, grep, read_file) if the search results are missin
                 const valid = AVAILABLE_MODELS.find((m) => m.id === resolved)
                 if (!valid) {
                     const aliases = Object.keys(MODEL_ALIASES).join(', ')
-                    return `Unknown model "${arg}". Available aliases: ${aliases}\nOr use a full model ID.`
+                    return `Modelo desconhecido "${arg}". Aliases disponíveis: ${aliases}\nOu use um ID completo de modelo.`
                 }
                 selectedModel = resolved
             } else {
                 // /model — interactive select
                 selectedModel = await askModel(container.config.model)
-                if (!selectedModel) return 'Cancelled.'
+                if (!selectedModel) return 'Cancelado.'
             }
 
             // Persist + mutate
             await saveGlobalConfig(container.fs, { model: selectedModel })
             container.config.model = selectedModel
 
-            return `Model switched to ${getModelLabel(selectedModel)} (${selectedModel})`
+            return `Modelo alterado para ${getModelLabel(selectedModel)} (${selectedModel})`
         },
     },
     {
         name: '/settings',
-        description: 'Edit settings',
+        description: 'Editar configurações',
         handler: async (container, args) => {
             const settingsDef = buildSettingsDef(container)
             const arg = args.trim().toLowerCase()
@@ -349,14 +350,14 @@ Only use your own tools (glob, grep, read_file) if the search results are missin
                 const entry = settingsDef.find((s) => s.key === arg || s.aliases?.includes(arg))
                 if (!entry) {
                     const keys = settingsDef.map((s) => s.key).join(', ')
-                    return `Unknown setting "${arg}". Available: ${keys}`
+                    return `Configuração desconhecida "${arg}". Disponíveis: ${keys}`
                 }
                 return editSetting(entry, container)
             }
 
             // Interactive: show all settings
             const result = await clack.select({
-                message: 'Configure ValarMind preferences',
+                message: 'Configurar preferências do ValarMind',
                 options: settingsDef.map((s) => ({
                     value: s.key,
                     label: s.label,
@@ -364,7 +365,7 @@ Only use your own tools (glob, grep, read_file) if the search results are missin
                 })),
             })
 
-            if (clack.isCancel(result)) return 'Cancelled.'
+            if (clack.isCancel(result)) return 'Cancelado.'
 
             const selected = result as string
             const entry = settingsDef.find((s) => s.key === selected)!
@@ -393,80 +394,80 @@ function buildSettingsDef(container: Container): SettingDef[] {
     return [
         {
             key: 'model',
-            label: 'Model',
+            label: 'Modelo',
             display: () => getModelLabel(cfg.model),
             edit: async () => {
                 const selected = await askModel(cfg.model)
                 if (!selected) return null
                 await saveGlobalConfig(container.fs, { model: selected })
                 cfg.model = selected
-                return `Model set to ${getModelLabel(selected)} (${selected})`
+                return `Modelo definido como ${getModelLabel(selected)} (${selected})`
             },
         },
         {
             key: 'key',
-            label: 'API Key',
+            label: 'Chave API',
             aliases: ['apikey', 'api-key'],
-            display: () => (cfg.apiKey ? maskApiKey(cfg.apiKey) : 'not set'),
+            display: () => (cfg.apiKey ? maskApiKey(cfg.apiKey) : 'não configurada'),
             edit: async () => {
                 const key = await askApiKey()
                 if (!key) return null
                 await saveCredentials(container.fs, key)
                 cfg.apiKey = key
-                return `API key updated (${maskApiKey(key)})`
+                return `Chave API atualizada (${maskApiKey(key)})`
             },
         },
         {
             key: 'temperature',
-            label: 'Temperature',
+            label: 'Temperatura',
             aliases: ['temp'],
             display: () => String(cfg.temperature),
             edit: async () => {
                 const result = await clack.text({
-                    message: 'Temperature (0-2)',
+                    message: 'Temperatura (0-2)',
                     defaultValue: String(cfg.temperature),
                     validate(value) {
                         const n = Number(value)
-                        if (Number.isNaN(n) || n < 0 || n > 2) return 'Must be a number between 0 and 2'
+                        if (Number.isNaN(n) || n < 0 || n > 2) return 'Deve ser um número entre 0 e 2'
                     },
                 })
                 if (clack.isCancel(result)) return null
                 const val = Number(result)
                 await saveGlobalConfig(container.fs, { temperature: val })
                 cfg.temperature = val
-                return `Temperature set to ${val}`
+                return `Temperatura definida como ${val}`
             },
         },
         {
             key: 'maxtokens',
-            label: 'Max Tokens',
+            label: 'Tokens Máximos',
             aliases: ['tokens', 'max-tokens'],
             display: () => String(cfg.maxTokens),
             edit: async () => {
                 const result = await clack.text({
-                    message: 'Max tokens (positive integer)',
+                    message: 'Tokens máximos (inteiro positivo)',
                     defaultValue: String(cfg.maxTokens),
                     validate(value) {
                         const n = Number(value)
-                        if (!Number.isInteger(n) || n <= 0) return 'Must be a positive integer'
+                        if (!Number.isInteger(n) || n <= 0) return 'Deve ser um inteiro positivo'
                     },
                 })
                 if (clack.isCancel(result)) return null
                 const val = Number(result)
                 await saveGlobalConfig(container.fs, { maxTokens: val })
                 cfg.maxTokens = val
-                return `Max tokens set to ${val}`
+                return `Tokens máximos definido como ${val}`
             },
         },
         {
             key: 'loglevel',
-            label: 'Log Level',
+            label: 'Nível de Log',
             aliases: ['log', 'log-level'],
             display: () => cfg.logLevel,
             edit: async () => {
                 const levels = ['silent', 'error', 'warn', 'info', 'debug'] as const
                 const result = await clack.select({
-                    message: 'Log level',
+                    message: 'Nível de log',
                     options: levels.map((l) => ({
                         value: l,
                         label: l === cfg.logLevel ? `${l} \u2713` : l,
@@ -476,18 +477,18 @@ function buildSettingsDef(container: Container): SettingDef[] {
                 const val = result as typeof cfg.logLevel
                 await saveGlobalConfig(container.fs, { logLevel: val })
                 cfg.logLevel = val
-                return `Log level set to ${val}`
+                return `Nível de log definido como ${val}`
             },
         },
         {
             key: 'permission',
-            label: 'Permission Mode',
+            label: 'Modo de Permissão',
             aliases: ['permissions', 'permission-mode'],
             display: () => cfg.permissionMode,
             edit: async () => {
                 const modes = ['auto', 'suggest', 'ask'] as const
                 const result = await clack.select({
-                    message: 'Permission mode',
+                    message: 'Modo de permissão',
                     options: modes.map((m) => ({
                         value: m,
                         label: m === cfg.permissionMode ? `${m} \u2713` : m,
@@ -497,23 +498,23 @@ function buildSettingsDef(container: Container): SettingDef[] {
                 const val = result as typeof cfg.permissionMode
                 await saveGlobalConfig(container.fs, { permissionMode: val })
                 cfg.permissionMode = val
-                return `Permission mode set to ${val}`
+                return `Modo de permissão definido como ${val}`
             },
         },
         {
             key: 'planmode',
-            label: 'Plan Mode',
+            label: 'Modo Plano',
             aliases: ['plan', 'plan-mode'],
             display: () => String(cfg.planMode),
             edit: async () => {
                 const result = await clack.confirm({
-                    message: 'Enable plan mode?',
+                    message: 'Ativar modo plano?',
                     initialValue: cfg.planMode,
                 })
                 if (clack.isCancel(result)) return null
                 await saveGlobalConfig(container.fs, { planMode: result })
                 cfg.planMode = result
-                return `Plan mode ${result ? 'enabled' : 'disabled'}`
+                return `Modo plano ${result ? 'ativado' : 'desativado'}`
             },
         },
     ]
@@ -521,7 +522,7 @@ function buildSettingsDef(container: Container): SettingDef[] {
 
 async function editSetting(entry: SettingDef, _container: Container): Promise<string> {
     const result = await entry.edit()
-    return result ?? 'Cancelled.'
+    return result ?? 'Cancelado.'
 }
 
 export function getSlashCommands(): SlashCommand[] {

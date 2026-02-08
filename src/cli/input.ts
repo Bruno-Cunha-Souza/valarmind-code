@@ -12,7 +12,7 @@ let keypressReady = false
  * Usa readline.emitKeypressEvents para parsear escape sequences (setas, etc.)
  * corretamente, mesmo quando o runtime entrega os bytes em chunks separados.
  */
-export async function promptInput(placeholder = 'Ask anything...'): Promise<string | null> {
+export async function promptInput(placeholder = 'Pergunte qualquer coisa...'): Promise<string | null> {
     // Fallback para non-TTY (pipe, CI)
     if (!process.stdin.isTTY) {
         const { createInterface } = await import('node:readline')

@@ -7,7 +7,7 @@ export async function configCommand(container: Container, key?: string, value?: 
         const config = { ...container.config }
         const display = {
             ...config,
-            apiKey: config.apiKey ? '****' : '(not set)',
+            apiKey: config.apiKey ? '****' : '(não configurado)',
         }
         console.log(JSON.stringify(display, null, 2))
         return
@@ -19,10 +19,10 @@ export async function configCommand(container: Container, key?: string, value?: 
         if (val !== undefined) {
             console.log(`${key}: ${JSON.stringify(val)}`)
         } else {
-            console.log(colors.warn(`Config key '${key}' not found`))
+            console.log(colors.warn(`Chave de config '${key}' não encontrada`))
         }
         return
     }
 
-    console.log(colors.dim('Config update via CLI not yet implemented. Edit config.json directly.'))
+    console.log(colors.dim('Atualização de config via CLI ainda não implementada. Edite config.json diretamente.'))
 }

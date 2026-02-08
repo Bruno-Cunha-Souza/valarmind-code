@@ -21,7 +21,7 @@ export async function doctorCommand(): Promise<void> {
         const { stdout } = await execaCommand('bun --version')
         checks.push({ name: 'Bun', status: 'ok', message: `v${stdout.trim()}` })
     } catch {
-        checks.push({ name: 'Bun', status: 'error', message: 'Not found' })
+        checks.push({ name: 'Bun', status: 'error', message: 'Não encontrado' })
     }
 
     // Git
@@ -29,16 +29,16 @@ export async function doctorCommand(): Promise<void> {
         const { stdout } = await execaCommand('git --version')
         checks.push({ name: 'Git', status: 'ok', message: stdout.trim() })
     } catch {
-        checks.push({ name: 'Git', status: 'warn', message: 'Not found (optional)' })
+        checks.push({ name: 'Git', status: 'warn', message: 'Não encontrado (opcional)' })
     }
 
     // ripgrep
     try {
         const { stdout } = await execaCommand('rg --version')
-        const version = stdout.split('\n')[0] ?? 'found'
+        const version = stdout.split('\n')[0] ?? 'encontrado'
         checks.push({ name: 'ripgrep', status: 'ok', message: version })
     } catch {
-        checks.push({ name: 'ripgrep', status: 'warn', message: 'Not found (grep fallback)' })
+        checks.push({ name: 'ripgrep', status: 'warn', message: 'Não encontrado (fallback grep)' })
     }
 
     // API key
@@ -46,19 +46,19 @@ export async function doctorCommand(): Promise<void> {
     if (key) {
         const result = await validateApiKey(key)
         if (result.ok) {
-            checks.push({ name: 'API Key', status: 'ok', message: 'Valid' })
+            checks.push({ name: 'API Key', status: 'ok', message: 'Válida' })
         } else {
             checks.push({ name: 'API Key', status: 'error', message: result.error })
         }
     } else {
-        checks.push({ name: 'API Key', status: 'error', message: 'Not configured' })
+        checks.push({ name: 'API Key', status: 'error', message: 'Não configurada' })
     }
 
     // VALARMIND.md
     if (await fs.exists('VALARMIND.md')) {
-        checks.push({ name: 'VALARMIND.md', status: 'ok', message: 'Found' })
+        checks.push({ name: 'VALARMIND.md', status: 'ok', message: 'Encontrado' })
     } else {
-        checks.push({ name: 'VALARMIND.md', status: 'warn', message: 'Not found (run /init)' })
+        checks.push({ name: 'VALARMIND.md', status: 'warn', message: 'Não encontrado (execute /init)' })
     }
 
     // Display results

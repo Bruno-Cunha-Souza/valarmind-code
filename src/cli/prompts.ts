@@ -17,7 +17,7 @@ export async function askApiKey(): Promise<string | null> {
 
 export async function askModel(currentModelId?: string): Promise<string | null> {
     const result = await clack.select({
-        message: 'Select model',
+        message: 'Selecionar modelo',
         options: AVAILABLE_MODELS.map((m) => ({
             value: m.id,
             label: m.id === currentModelId ? `${m.label} \u2713` : m.label,
