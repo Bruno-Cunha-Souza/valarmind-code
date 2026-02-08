@@ -30,6 +30,7 @@ export interface ChatParams {
     temperature?: number
     maxTokens?: number
     signal?: AbortSignal
+    cacheControl?: boolean
 }
 
 export interface ChatResponse {

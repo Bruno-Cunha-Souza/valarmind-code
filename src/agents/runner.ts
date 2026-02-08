@@ -10,13 +10,28 @@ import type { SandboxManager } from '../security/sandbox.js'
 import type { ToolExecutor } from '../tools/executor.js'
 import type { ToolRegistry } from '../tools/registry.js'
 import type { ToolContext } from '../tools/types.js'
+import type { ModelRouter } from '../llm/model-router.js'
 import type { Tracer } from '../tracing/tracer.js'
 import type { BaseAgent } from './base-agent.js'
 import type { AgentContext, AgentResult, AgentTask } from './types.js'
 
+const TOOL_RESULT_MAX_CHARS = 8000
+const TRUNCATION_HEAD = 3000
+const TRUNCATION_TAIL = 2000
+
 function formatToolResult(result: { ok: boolean; value?: string; error?: string }): string {
-    if (result.ok) return result.value ?? ''
-    return `ERROR: ${result.error}`
+    if (!result.ok) {
+        const error = result.error ?? 'Unknown error'
+        return `ERROR: ${error.length > 2000 ? error.slice(0, 2000) + '\n[error truncated]' : error}`
+    }
+
+    const value = result.value ?? ''
+    if (value.length <= TOOL_RESULT_MAX_CHARS) return value
+
+    const head = value.slice(0, TRUNCATION_HEAD)
+    const tail = value.slice(-TRUNCATION_TAIL)
+    const truncatedLines = value.slice(TRUNCATION_HEAD, -TRUNCATION_TAIL).split('\n').length
+    return `${head}\n\n[... ${truncatedLines} lines truncated for context efficiency ...]\n\n${tail}`
 }
 
 export class AgentRunner {
@@ -31,7 +46,8 @@ export class AgentRunner {
         private hookRunner?: HookRunner,
         private tokenBudget: { target: number; hardCap: number } = { target: 3000, hardCap: 4800 },
         private defaultModel?: string,
-        private sandboxManager?: SandboxManager
+        private sandboxManager?: SandboxManager,
+        private modelRouter?: ModelRouter
     ) {}
 
     async run(agent: BaseAgent, task: AgentTask, context: AgentContext): Promise<AgentResult> {
@@ -67,7 +83,11 @@ export class AgentRunner {
             for (let turn = 0; turn < agent.maxTurns; turn++) {
                 if (controller.signal.aborted) break
 
-                const model = agent.modelSuffix && this.defaultModel ? `${this.defaultModel}${agent.modelSuffix}` : undefined
+                const routedModel = this.modelRouter?.resolve(agent.type)
+                const baseModel = routedModel ?? this.defaultModel
+                const model = agent.modelSuffix && baseModel
+                    ? `${baseModel}${agent.modelSuffix}`
+                    : routedModel
 
                 const response = await this.llmClient.chat({
                     model,
@@ -75,6 +95,7 @@ export class AgentRunner {
                     tools: tools.length > 0 ? tools : undefined,
                     maxTokens: agent.maxTokens,
                     signal: controller.signal,
+                    cacheControl: true,
                 })
 
                 totalPromptTokens += response.usage.promptTokens

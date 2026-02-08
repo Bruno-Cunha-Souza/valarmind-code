@@ -2,9 +2,11 @@ import { randomUUID } from 'node:crypto'
 import { errorMessage } from '../../core/errors.js'
 import type { TypedEventEmitter } from '../../core/events.js'
 import type { AgentType } from '../../core/types.js'
+import { summarizeHistory } from '../../llm/history-summarizer.js'
 import type { ChatMessage, LLMClient } from '../../llm/types.js'
 import { getCompactThreshold } from '../../llm/model-specs.js'
 import { estimateTokens } from '../../llm/token-counter.js'
+import type { ModelRouter } from '../../llm/model-router.js'
 import type { Logger } from '../../logger/index.js'
 import type { ContextLoader, ProjectContext } from '../../memory/context-loader.js'
 import type { StateManager } from '../../memory/state-manager.js'
@@ -30,6 +32,7 @@ interface OrchestratorDeps {
     logger: Logger
     projectDir: string
     config?: { model: string }
+    modelRouter?: ModelRouter
 }
 
 export class Orchestrator {
@@ -41,7 +44,7 @@ export class Orchestrator {
 
     constructor(private deps: OrchestratorDeps) {}
 
-    private trimHistory(): void {
+    private async trimHistory(): Promise<void> {
         const threshold = getCompactThreshold(this.deps.config?.model ?? '')
 
         let totalTokens = 0
@@ -54,11 +57,25 @@ export class Orchestrator {
         if (totalTokens > threshold) {
             const keepRecent = 10
             if (this.conversationHistory.length > keepRecent + 1) {
+                const toSummarize = this.conversationHistory.slice(1, -keepRecent)
+
+                let summaryContent: string
+                try {
+                    const summaryModel = this.deps.modelRouter?.resolve()
+                        ?? this.deps.config?.model ?? ''
+                    summaryContent = await summarizeHistory(
+                        toSummarize, this.deps.llmClient, summaryModel,
+                    )
+                } catch (err) {
+                    this.deps.logger.warn({ error: err }, 'History summarization failed, using fallback')
+                    summaryContent = '[Previous conversation summary unavailable]'
+                }
+
                 const first = this.conversationHistory[0]
                 const recent = this.conversationHistory.slice(-keepRecent)
                 this.conversationHistory = [
                     first!,
-                    { role: 'user', content: '[Histórico anterior compactado por limite de contexto]' },
+                    { role: 'user', content: `[Previous conversation summary]\n${summaryContent}` },
                     ...recent,
                 ]
                 this.deps.logger.info(
@@ -94,11 +111,15 @@ export class Orchestrator {
             const { agentContext, systemPrompt } = await this.prepareContext(sessionId, signal)
 
             this.conversationHistory.push({ role: 'user', content: input })
-            this.trimHistory()
+            await this.trimHistory()
+
+            const orchestratorModel = this.deps.modelRouter?.resolve('orchestrator')
 
             const planResponse = await this.deps.llmClient.chat({
+                model: orchestratorModel,
                 messages: [{ role: 'system', content: systemPrompt }, ...this.conversationHistory],
                 signal,
+                cacheControl: true,
             })
 
             const llmOutput = planResponse.content ?? ''
@@ -106,7 +127,7 @@ export class Orchestrator {
             // Direct answer (no delegation)
             if (isDirectAnswer(llmOutput)) {
                 this.conversationHistory.push({ role: 'assistant', content: llmOutput })
-                this.trimHistory()
+                await this.trimHistory()
                 await this.deps.stateManager.update({ now: input })
                 this.deps.tracer.endSpan(span)
                 this.deps.tracer.endTrace()
@@ -130,7 +151,7 @@ export class Orchestrator {
             // Synthesize results
             const summary = this.synthesize(plan.plan, results)
             this.conversationHistory.push({ role: 'assistant', content: summary })
-            this.trimHistory()
+            await this.trimHistory()
 
             await this.deps.stateManager.update({ now: plan.plan, goal: input })
             this.deps.tracer.endSpan(span)
@@ -154,13 +175,14 @@ export class Orchestrator {
             const { agentContext, systemPrompt } = await this.prepareContext(sessionId, signal)
 
             this.conversationHistory.push({ role: 'user', content: input })
-            this.trimHistory()
+            await this.trimHistory()
 
             // Try streaming for a direct answer first
             const chunks: string[] = []
             let isStreaming = true
 
             for await (const chunk of this.deps.llmClient.chatStream({
+                model: this.deps.modelRouter?.resolve('orchestrator'),
                 messages: [{ role: 'system', content: systemPrompt }, ...this.conversationHistory],
                 signal,
             })) {
@@ -177,7 +199,7 @@ export class Orchestrator {
 
             if (isDirectAnswer(fullContent)) {
                 this.conversationHistory.push({ role: 'assistant', content: fullContent })
-                this.trimHistory()
+                await this.trimHistory()
                 await this.deps.stateManager.update({ now: input })
             } else {
                 // For plan-based execution, fall back to non-streaming
@@ -188,7 +210,7 @@ export class Orchestrator {
                     results.push(...gateResults)
                     const summary = this.synthesize(plan.plan, results)
                     this.conversationHistory.push({ role: 'assistant', content: summary })
-                    this.trimHistory()
+                    await this.trimHistory()
                     await this.deps.stateManager.update({ now: plan.plan, goal: input })
                     yield summary
                 }
@@ -211,11 +233,13 @@ export class Orchestrator {
             const { systemPrompt } = await this.prepareContext(sessionId, signal)
 
             this.conversationHistory.push({ role: 'user', content: input })
-            this.trimHistory()
+            await this.trimHistory()
 
             const planResponse = await this.deps.llmClient.chat({
+                model: this.deps.modelRouter?.resolve('orchestrator'),
                 messages: [{ role: 'system', content: systemPrompt }, ...this.conversationHistory],
                 signal,
+                cacheControl: true,
             })
 
             const llmOutput = planResponse.content ?? ''
@@ -253,7 +277,7 @@ export class Orchestrator {
 
             const summary = this.synthesize(plan.plan, results)
             this.conversationHistory.push({ role: 'assistant', content: summary })
-            this.trimHistory()
+            await this.trimHistory()
             await this.deps.stateManager.update({ now: plan.plan, goal: plan.plan })
 
             this.deps.tracer.endSpan(span)

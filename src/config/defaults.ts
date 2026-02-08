@@ -48,6 +48,11 @@ export const DEFAULT_CONFIG: Omit<ResolvedConfig, 'apiKey' | 'projectDir' | 'con
     plugins: [],
     pluginSettings: {},
     sandbox: { enabled: false, customProfiles: {} },
+    costTier: {
+        light: 'google/gemini-2.5-flash',
+        standard: 'anthropic/claude-sonnet-4.5',
+        heavy: 'anthropic/claude-sonnet-4.5',
+    },
 }
 
 export const CONFIG_DIR = `${process.env.HOME ?? '~'}/.config/valarmind`

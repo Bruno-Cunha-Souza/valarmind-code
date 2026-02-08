@@ -133,7 +133,7 @@ describe('Orchestrator trimHistory', () => {
         expect(history[0].content).toContain('FIRST_MESSAGE_MARKER_')
         // Should have compaction notice
         const hasCompactNotice = history.some(
-            (m: any) => typeof m.content === 'string' && m.content.includes('compactado')
+            (m: any) => typeof m.content === 'string' && m.content.includes('Previous conversation summary')
         )
         expect(hasCompactNotice).toBe(true)
     })
@@ -155,7 +155,7 @@ describe('Orchestrator trimHistory', () => {
         const history = (orchestrator as any).conversationHistory as any[]
         // Should not contain compaction notice
         const hasCompactNotice = history.some(
-            (m: any) => typeof m.content === 'string' && m.content.includes('compactado')
+            (m: any) => typeof m.content === 'string' && m.content.includes('Previous conversation summary')
         )
         expect(hasCompactNotice).toBe(false)
     })
@@ -178,7 +178,7 @@ describe('Orchestrator trimHistory', () => {
         const history = (orchestrator as any).conversationHistory as any[]
         // Should NOT have compacted because 110k tokens < 150k threshold
         const hasCompactNotice = history.some(
-            (m: any) => typeof m.content === 'string' && m.content.includes('compactado')
+            (m: any) => typeof m.content === 'string' && m.content.includes('Previous conversation summary')
         )
         expect(hasCompactNotice).toBe(false)
     })

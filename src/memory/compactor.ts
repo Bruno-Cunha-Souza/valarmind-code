@@ -1,5 +1,19 @@
 import type { WorkingState } from './types.js'
 
+// Compact generic text using TOON encoding
+// Falls back to original text if TOON is unavailable or doesn't save enough
+export async function compactText(text: string): Promise<string> {
+    try {
+        const { encode } = await import('@toon-format/toon')
+        const compacted = encode(text)
+        // Only use if it actually saves tokens (>15% reduction)
+        if (compacted.length < text.length * 0.85) return compacted
+        return text
+    } catch {
+        return text
+    }
+}
+
 // TOON compaction: convert state to a compact format for prompts
 // Uses @toon-format/toon when available, falls back to manual compaction
 export async function compactState(state: WorkingState): Promise<string> {

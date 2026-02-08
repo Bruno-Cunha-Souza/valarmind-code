@@ -214,9 +214,11 @@ describe('Context Overflow', () => {
             const client = new ScriptedLLMClient(responses)
             const deps = createRunnerDeps()
 
+            // Use values under TOOL_RESULT_MAX_CHARS (8000) to avoid formatToolResult truncation
+            // but large enough that 15 rounds still trigger runner-level trimming
             deps.toolExecutor.executeSafe = mock(async () => ({
                 ok: true,
-                value: 'y'.repeat(20000),
+                value: 'y'.repeat(7999),
             }))
 
             const runner = new AgentRunner(

@@ -65,6 +65,14 @@ export const ConfigSchema = z.object({
             customProfiles: z.record(z.unknown()).optional(),
         })
         .optional(),
+    costTier: z
+        .object({
+            light: z.string().optional(),
+            standard: z.string().optional(),
+            heavy: z.string().optional(),
+        })
+        .optional(),
+    agentModels: z.record(z.string()).optional(),
 })
 
 export type Config = z.infer<typeof ConfigSchema>
@@ -86,6 +94,8 @@ export interface ResolvedConfig {
     plugins: string[]
     pluginSettings: Record<string, unknown>
     sandbox: { enabled: boolean; customProfiles: Record<string, unknown> }
+    costTier?: { light: string; standard: string; heavy: string }
+    agentModels?: Partial<Record<AgentType, string>>
     projectDir: string
     configDir: string
 }

@@ -32,6 +32,10 @@ export function createLLMClient(config: ResolvedConfig, logger: Logger, tracer: 
                                 tools: params.tools as OpenAI.ChatCompletionTool[] | undefined,
                                 temperature: params.temperature ?? config.temperature,
                                 max_tokens: params.maxTokens ?? config.maxTokens,
+                                ...(params.cacheControl ? {
+                                    // @ts-expect-error — OpenRouter extension for Anthropic prompt caching
+                                    extra_body: { cache_control: { type: 'ephemeral' } },
+                                } : {}),
                             },
                             { signal: params.signal }
                         )
@@ -82,6 +86,10 @@ export function createLLMClient(config: ResolvedConfig, logger: Logger, tracer: 
                     temperature: params.temperature ?? config.temperature,
                     max_tokens: params.maxTokens ?? config.maxTokens,
                     stream: true,
+                    ...(params.cacheControl ? {
+                        // @ts-expect-error — OpenRouter extension for Anthropic prompt caching
+                        extra_body: { cache_control: { type: 'ephemeral' } },
+                    } : {}),
                 },
                 { signal: params.signal }
             )
