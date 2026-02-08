@@ -2,7 +2,7 @@
 
 Multi-agent CLI for software development, inspired by Claude Code CLI and Codex CLI. Each step of the development process is handled by a specialist agent.
 
-> **Status:** Phase 1-5 implemented — Foundation, Core Agents, Quality Agents, Integration, Web Search, Plugins & Sandboxing functional.
+> **Status:** Phase 1-5 implemented — Foundation, Core Agents, Quality Agents, Integration, Web Search, Plugins & Sandboxing functional. Multi-line input and live config editing available.
 
 ## Features
 
@@ -59,7 +59,7 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 
 ### Slash Commands (REPL)
 
-`/init` `/compact` `/clear` `/help` `/status` `/plan` `/approve` `/reject` `/undo` `/diff` `/commit` `/agents` `/tasks`
+`/init` `/compact` `/clear` `/help` `/status` `/model` `/settings` `/plan` `/approve` `/reject` `/undo` `/diff` `/commit` `/agents` `/tasks`
 
 ## Configuration
 

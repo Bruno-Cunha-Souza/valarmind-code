@@ -475,10 +475,12 @@ Interactive commands available during REPL session:
 |---------|-----------|-------------|
 | `/init` | `[--force]` | Generate or update VALARMIND.md |
 | `/compact` | - | Compact context to save tokens |
-| `/clear` | - | Clear conversation history |
+| `/clear` | - | Clear screen and conversation history |
 | `/help` | `[topic]` | Show help |
 | `/exit` | - | Exit REPL |
 | `/status` | - | Show session status (tokens, turns, agents) |
+| `/model` | `[alias\|id\|list]` | Switch model (interactive or direct) |
+| `/settings` | `[key]` | Edit settings (model, key, temperature, etc.) |
 | `/plan` | `[on\|off]` | Toggle plan mode |
 | `/approve` | - | Approve pending plan |
 | `/reject` | `[reason]` | Reject pending plan |
@@ -565,6 +567,40 @@ interface Config {
 | `VALARMIND_SANDBOX` | Enable sandbox | `true` |
 | `VALARMIND_NO_COLOR` | Disable colors | `false` |
 | `VALARMIND_TOKEN_BUDGET` | Token budget | `4800` |
+
+## REPL Input
+
+The REPL uses a custom raw-mode input prompt with inline slash command suggestions and multi-line support.
+
+### Multi-line Input
+
+| Shortcut | Action |
+|----------|--------|
+| `Alt+Enter` | Insert newline (works in all terminals) |
+| `Shift+Enter` | Insert newline (requires terminal modifier support) |
+| `Enter` | Submit input |
+
+When in multi-line mode, `Up`/`Down` arrows navigate between lines. In single-line mode, they navigate slash command suggestions.
+
+### Input Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Submit input |
+| `Alt+Enter` / `Shift+Enter` | Insert newline |
+| `Tab` | Autocomplete slash command |
+| `Up` / `Down` | Navigate suggestions (single-line) or lines (multi-line) |
+| `Left` / `Right` | Move cursor |
+| `Home` / `Ctrl+A` | Go to start of current line |
+| `End` / `Ctrl+E` | Go to end of current line |
+| `Ctrl+U` | Clear entire input |
+| `Ctrl+W` | Delete previous word |
+| `Escape` | Clear input (or exit if empty) |
+| `Ctrl+C` | Exit |
+
+### Slash Command Suggestions
+
+Type `/` to see available commands. Use arrow keys to navigate and `Tab` to autocomplete. Suggestions only appear in single-line mode.
 
 ## Interactive Prompts
 
@@ -1285,7 +1321,8 @@ valarmind -y --no-sandbox -p "Run linter and fix issues" || exit 1
 ### Phase 2: Core Features
 
 - [x] Interactive REPL with @clack/prompts
-- [x] Slash command parser (14 commands: /init, /compact, /clear, /help, /exit, /status, /agents, /plan, /approve, /reject, /tasks, /undo, /diff, /commit)
+- [x] Slash command parser (16 commands: /init, /compact, /clear, /help, /exit, /status, /model, /settings, /agents, /plan, /approve, /reject, /tasks, /undo, /diff, /commit)
+- [x] Multi-line input support (Alt+Enter / Shift+Enter)
 - [x] Non-interactive mode (-p flag)
 - [x] Hooks system (UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd, PreCompact)
 - [ ] Permission prompts (planned)
@@ -1303,7 +1340,8 @@ valarmind -y --no-sandbox -p "Run linter and fix issues" || exit 1
 - [x] Colored output (picocolors via ui.ts)
 - [x] Progress indicators (clack spinners)
 - [x] Error formatting
-- [ ] Doctor command (planned)
+- [x] Doctor command (`valarmind doctor`)
+- [x] /clear screen reset (clears console and reprints banner)
 - [ ] Shell completions (planned)
 
 ## References
