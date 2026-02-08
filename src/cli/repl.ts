@@ -51,9 +51,10 @@ export async function startREPL(container: Container): Promise<void> {
                 }
             } else {
                 const isInteractive = ['/model', '/settings'].includes(cmdName!)
+                const isClear = cmdName === '/clear'
                 const result = await handleSlashCommand(text, container)
                 if (result !== null) {
-                    if (isInteractive) {
+                    if (isInteractive || isClear) {
                         console.clear()
                         console.log(banner())
                         console.log(colors.dim(`Model: ${getModelLabel(container.config.model)}`))
