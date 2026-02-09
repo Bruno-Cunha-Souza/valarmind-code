@@ -5,6 +5,19 @@ import type { TypedEventEmitter } from '../core/events.js'
 import type { Logger } from '../logger/index.js'
 import type { HookConfig, HookName, HookResult } from './types.js'
 
+const SENSITIVE_KEY_PATTERNS = ['API_KEY', 'SECRET', 'TOKEN', 'PASSWORD', 'CREDENTIAL', 'PRIVATE_KEY', 'ACCESS_KEY']
+
+function sanitizeEnv(env: NodeJS.ProcessEnv): Record<string, string> {
+    const filtered: Record<string, string> = {}
+    for (const [key, value] of Object.entries(env)) {
+        if (value === undefined) continue
+        const upper = key.toUpperCase()
+        if (SENSITIVE_KEY_PATTERNS.some((pattern) => upper.includes(pattern))) continue
+        filtered[key] = value
+    }
+    return filtered
+}
+
 export class HookRunner {
     constructor(
         private config: ResolvedConfig,
@@ -22,7 +35,7 @@ export class HookRunner {
             try {
                 const { stdout } = await execaCommand(hook.command, {
                     timeout: hook.timeout ?? 10000,
-                    env: { ...process.env, ...env },
+                    env: { ...sanitizeEnv(process.env), ...env },
                     cwd: this.config.projectDir,
                     reject: false,
                     shell: true,

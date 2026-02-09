@@ -102,19 +102,16 @@ describe('AgentRunner trimRunnerMessages', () => {
         }
 
         const llmClient = createMockLLM(responses)
-        const runner = new AgentRunner(
+        const runner = new AgentRunner({
             llmClient,
-            bigToolExecutor as any,
-            toolRegistry as any,
-            tracer as any,
+            toolExecutor: bigToolExecutor as any,
+            toolRegistry: toolRegistry as any,
+            tracer: tracer as any,
             eventBus,
-            '/test',
-            fs as any,
-            undefined, // hookRunner
-            { target: 3000, hardCap: 4800 },
-            undefined, // defaultModel (uses 128k default)
-            undefined  // sandboxManager
-        )
+            projectDir: '/test',
+            fs: fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({ maxTurns: 20 })
         const task: AgentTask = { id: 'test-1', type: 'search', description: 'Find something' }
@@ -141,19 +138,16 @@ describe('AgentRunner trimRunnerMessages', () => {
         ]
 
         const llmClient = createMockLLM(responses)
-        const runner = new AgentRunner(
+        const runner = new AgentRunner({
             llmClient,
-            toolExecutor as any,
-            toolRegistry as any,
-            tracer as any,
+            toolExecutor: toolExecutor as any,
+            toolRegistry: toolRegistry as any,
+            tracer: tracer as any,
             eventBus,
-            '/test',
-            fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-            undefined,
-            undefined
-        )
+            projectDir: '/test',
+            fs: fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({ maxTurns: 5 })
         const task: AgentTask = { id: 'test-2', type: 'search', description: 'Quick search' }
@@ -180,19 +174,16 @@ describe('AgentRunner trimRunnerMessages', () => {
         ]
 
         const llmClient = createMockLLM(responses)
-        const runner = new AgentRunner(
+        const runner = new AgentRunner({
             llmClient,
-            toolExecutor as any,
-            toolRegistry as any,
-            tracer as any,
+            toolExecutor: toolExecutor as any,
+            toolRegistry: toolRegistry as any,
+            tracer: tracer as any,
             eventBus,
-            '/test',
-            fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-            undefined,
-            undefined
-        )
+            projectDir: '/test',
+            fs: fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({ maxTurns: 5 })
         const task: AgentTask = { id: 'test-3', type: 'search', description: 'Short search' }
@@ -221,19 +212,16 @@ describe('AgentRunner trimRunnerMessages', () => {
         }
 
         const llmClient = createMockLLM(responses)
-        const runner = new AgentRunner(
+        const runner = new AgentRunner({
             llmClient,
-            bigToolExecutor as any,
-            toolRegistry as any,
-            tracer as any,
+            toolExecutor: bigToolExecutor as any,
+            toolRegistry: toolRegistry as any,
+            tracer: tracer as any,
             eventBus,
-            '/test',
-            fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-            undefined,
-            undefined
-        )
+            projectDir: '/test',
+            fs: fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({ maxTurns: 15 })
         const task: AgentTask = { id: 'test-4', type: 'search', description: 'MARKER_TASK_DESC' }

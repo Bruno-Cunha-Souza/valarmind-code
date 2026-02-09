@@ -15,10 +15,12 @@ export const MODEL_SPECS: Record<string, ModelSpec> = {
 const DEFAULT_CONTEXT_WINDOW = 128_000
 
 export function getModelSpec(modelId: string): ModelSpec {
-    return MODEL_SPECS[modelId] ?? {
-        contextWindow: DEFAULT_CONTEXT_WINDOW,
-        maxOutput: 4_096,
-    }
+    return (
+        MODEL_SPECS[modelId] ?? {
+            contextWindow: DEFAULT_CONTEXT_WINDOW,
+            maxOutput: 4_096,
+        }
+    )
 }
 
 export function getCompactThreshold(modelId: string): number {

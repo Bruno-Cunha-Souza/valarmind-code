@@ -46,18 +46,17 @@ describe('Web Search Integration (Phase 5A)', () => {
         const tracer = new Tracer(mockLogger, eventBus)
         const executor = new ToolExecutor(registry, pm, tracer)
 
-        const runner = new AgentRunner(
-            mockLLM,
-            executor,
-            registry,
+        const runner = new AgentRunner({
+            llmClient: mockLLM,
+            toolExecutor: executor,
+            toolRegistry: registry,
             tracer,
             eventBus,
-            '/test',
-            {} as FileSystem,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-            'anthropic/claude-sonnet'
-        )
+            projectDir: '/test',
+            fs: {} as FileSystem,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+            defaultModel: 'anthropic/claude-sonnet',
+        })
 
         const agent = new ResearchAgent()
         const result = await runner.run(

@@ -81,17 +81,17 @@ function createContext(): AgentContext {
 }
 
 function createRunner(client: ScriptedLLMClient, deps: ReturnType<typeof createRunnerDeps>, hookRunner?: any) {
-    return new AgentRunner(
-        client,
-        deps.toolExecutor as any,
-        deps.toolRegistry as any,
-        deps.tracer as any,
-        deps.eventBus,
-        '/test',
-        deps.fs as any,
+    return new AgentRunner({
+        llmClient: client,
+        toolExecutor: deps.toolExecutor as any,
+        toolRegistry: deps.toolRegistry as any,
+        tracer: deps.tracer as any,
+        eventBus: deps.eventBus,
+        projectDir: '/test',
+        fs: deps.fs as any,
         hookRunner,
-        { target: 3000, hardCap: 4800 },
-    )
+        tokenBudget: { target: 3000, hardCap: 4800 },
+    })
 }
 
 describe('AgentRunner Flow (Integration)', () => {
@@ -299,18 +299,17 @@ describe('AgentRunner Flow (Integration)', () => {
         const client = ScriptedLLMClient.fromStrings(['done'])
         const deps = createRunnerDeps()
 
-        const runner = new AgentRunner(
-            client,
-            deps.toolExecutor as any,
-            deps.toolRegistry as any,
-            deps.tracer as any,
-            deps.eventBus,
-            '/test',
-            deps.fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-            'openai/gpt-4', // defaultModel
-        )
+        const runner = new AgentRunner({
+            llmClient: client,
+            toolExecutor: deps.toolExecutor as any,
+            toolRegistry: deps.toolRegistry as any,
+            tracer: deps.tracer as any,
+            eventBus: deps.eventBus,
+            projectDir: '/test',
+            fs: deps.fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+            defaultModel: 'openai/gpt-4',
+        })
 
         const agent = createMockAgent({ modelSuffix: ':online' })
         const task: AgentTask = { id: 't-9', type: 'research', description: 'Web search' }

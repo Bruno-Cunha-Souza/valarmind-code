@@ -5,8 +5,8 @@ import { validateApiKey } from '../auth/validator.js'
 import { CONFIG_DIR, GLOBAL_CONFIG_FILE } from '../config/defaults.js'
 import { loadConfig } from '../config/loader.js'
 import { createContainer } from '../core/container.js'
-import { BunFileSystem } from '../core/fs.js'
 import type { FileSystem } from '../core/fs.js'
+import { BunFileSystem } from '../core/fs.js'
 import { authCommand } from './commands/auth.js'
 import { configCommand } from './commands/config-cmd.js'
 import { doctorCommand } from './commands/doctor.js'
@@ -26,7 +26,7 @@ interface SetupResult {
 async function setupFirstUse(fs: FileSystem): Promise<SetupResult | null> {
     clack.intro(colors.brand('ValarMind Code — Initial Setup'))
 
-    console.log(colors.dim('No API key found. Let\'s set it up!'))
+    console.log(colors.dim("No API key found. Let's set it up!"))
     console.log(colors.dim('You need an OpenRouter API key (https://openrouter.ai/keys)\n'))
 
     const apiKey = await askApiKey()

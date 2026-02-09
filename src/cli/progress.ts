@@ -1,5 +1,5 @@
-import type { AgentType } from '../core/types.js'
 import type { TypedEventEmitter } from '../core/events.js'
+import type { AgentType } from '../core/types.js'
 
 const AGENT_LABELS: Record<AgentType, string> = {
     orchestrator: 'Orchestrating...',
@@ -36,11 +36,7 @@ export interface ProgressTracker {
     notifySpinnerStopped(): void
 }
 
-export function createProgressTracker(
-    eventBus: TypedEventEmitter,
-    spinner: Spinner,
-    restartSpinner?: () => void
-): ProgressTracker {
+export function createProgressTracker(eventBus: TypedEventEmitter, spinner: Spinner, restartSpinner?: () => void): ProgressTracker {
     let currentAgent: AgentType | null = null
     let spinnerActive = true
 

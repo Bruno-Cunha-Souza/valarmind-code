@@ -203,9 +203,9 @@ describe('Orchestrator intelligent synthesis', () => {
         const orchestrator = new Orchestrator(deps as any)
         const result = await orchestrator.process('Do something')
 
-        expect(result).toContain('Aviso')
+        expect(result).toContain('Warning')
         expect(result).toContain('search')
-        expect(result).toContain('incompletos')
+        expect(result).toContain('incomplete')
     })
 
     it('does NOT show warning when only non-core agents fail', async () => {

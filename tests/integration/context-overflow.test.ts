@@ -178,17 +178,16 @@ describe('Context Overflow', () => {
                 value: 'z'.repeat(15000),
             }))
 
-            const runner = new AgentRunner(
-                client,
-                deps.toolExecutor as any,
-                deps.toolRegistry as any,
-                deps.tracer as any,
-                deps.eventBus,
-                '/test',
-                deps.fs as any,
-                undefined,
-                { target: 3000, hardCap: 4800 },
-            )
+            const runner = new AgentRunner({
+                llmClient: client,
+                toolExecutor: deps.toolExecutor as any,
+                toolRegistry: deps.toolRegistry as any,
+                tracer: deps.tracer as any,
+                eventBus: deps.eventBus,
+                projectDir: '/test',
+                fs: deps.fs as any,
+                tokenBudget: { target: 3000, hardCap: 4800 },
+            })
 
             const agent = createMockAgent({ maxTurns: 15 })
             const task: AgentTask = { id: 'trim-1', type: 'search', description: 'MARKER_DESC' }
@@ -221,17 +220,16 @@ describe('Context Overflow', () => {
                 value: 'y'.repeat(7999),
             }))
 
-            const runner = new AgentRunner(
-                client,
-                deps.toolExecutor as any,
-                deps.toolRegistry as any,
-                deps.tracer as any,
-                deps.eventBus,
-                '/test',
-                deps.fs as any,
-                undefined,
-                { target: 3000, hardCap: 4800 },
-            )
+            const runner = new AgentRunner({
+                llmClient: client,
+                toolExecutor: deps.toolExecutor as any,
+                toolRegistry: deps.toolRegistry as any,
+                tracer: deps.tracer as any,
+                eventBus: deps.eventBus,
+                projectDir: '/test',
+                fs: deps.fs as any,
+                tokenBudget: { target: 3000, hardCap: 4800 },
+            })
 
             const agent = createMockAgent({ maxTurns: 20 })
             const task: AgentTask = { id: 'marker-1', type: 'search', description: 'Find stuff' }
@@ -257,17 +255,16 @@ describe('Context Overflow', () => {
             ])
 
             const deps = createRunnerDeps()
-            const runner = new AgentRunner(
-                client,
-                deps.toolExecutor as any,
-                deps.toolRegistry as any,
-                deps.tracer as any,
-                deps.eventBus,
-                '/test',
-                deps.fs as any,
-                undefined,
-                { target: 3000, hardCap: 4800 },
-            )
+            const runner = new AgentRunner({
+                llmClient: client,
+                toolExecutor: deps.toolExecutor as any,
+                toolRegistry: deps.toolRegistry as any,
+                tracer: deps.tracer as any,
+                eventBus: deps.eventBus,
+                projectDir: '/test',
+                fs: deps.fs as any,
+                tokenBudget: { target: 3000, hardCap: 4800 },
+            })
 
             const agent = createMockAgent()
             const task: AgentTask = { id: 'notrim-1', type: 'search', description: 'Quick' }
@@ -289,17 +286,16 @@ describe('Context Overflow', () => {
             const client = ScriptedLLMClient.fromStrings(['done'])
             const deps = createRunnerDeps()
 
-            const runner = new AgentRunner(
-                client,
-                deps.toolExecutor as any,
-                deps.toolRegistry as any,
-                deps.tracer as any,
-                deps.eventBus,
-                '/test',
-                deps.fs as any,
-                undefined,
-                { target: 3000, hardCap: 4800 },
-            )
+            const runner = new AgentRunner({
+                llmClient: client,
+                toolExecutor: deps.toolExecutor as any,
+                toolRegistry: deps.toolRegistry as any,
+                tracer: deps.tracer as any,
+                eventBus: deps.eventBus,
+                projectDir: '/test',
+                fs: deps.fs as any,
+                tokenBudget: { target: 3000, hardCap: 4800 },
+            })
 
             const agent = createMockAgent({
                 excludeProjectContext: true,
@@ -322,17 +318,16 @@ describe('Context Overflow', () => {
             const client = ScriptedLLMClient.fromStrings(['done'])
             const deps = createRunnerDeps()
 
-            const runner = new AgentRunner(
-                client,
-                deps.toolExecutor as any,
-                deps.toolRegistry as any,
-                deps.tracer as any,
-                deps.eventBus,
-                '/test',
-                deps.fs as any,
-                undefined,
-                { target: 3000, hardCap: 4800 },
-            )
+            const runner = new AgentRunner({
+                llmClient: client,
+                toolExecutor: deps.toolExecutor as any,
+                toolRegistry: deps.toolRegistry as any,
+                tracer: deps.tracer as any,
+                eventBus: deps.eventBus,
+                projectDir: '/test',
+                fs: deps.fs as any,
+                tokenBudget: { target: 3000, hardCap: 4800 },
+            })
 
             const agent = createMockAgent({
                 excludeProjectContext: false,

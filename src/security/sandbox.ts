@@ -71,8 +71,8 @@ export class SandboxManager {
         // macOS: sandbox-exec; Linux: bubblewrap (bwrap)
         if (process.platform === 'darwin') {
             try {
-                Bun.spawnSync({ cmd: ['which', 'sandbox-exec'] })
-                return true
+                const result = Bun.spawnSync({ cmd: ['which', 'sandbox-exec'] })
+                return result.exitCode === 0
             } catch {
                 return false
             }
@@ -80,8 +80,8 @@ export class SandboxManager {
 
         if (process.platform === 'linux') {
             try {
-                Bun.spawnSync({ cmd: ['which', 'bwrap'] })
-                return true
+                const result = Bun.spawnSync({ cmd: ['which', 'bwrap'] })
+                return result.exitCode === 0
             } catch {
                 return false
             }
@@ -126,6 +126,18 @@ export class SandboxManager {
             }
             const expanded = denied.replace('~', process.env.HOME ?? '/root')
             rules.push(`(deny file-write* (subpath "${expanded}"))`)
+        }
+
+        // Network restrictions: deny outbound unless explicitly allowed
+        if (profile.network.allowedDomains.length === 0) {
+            rules.push('(deny network-outbound)')
+        } else if (!profile.network.allowedDomains.includes('*')) {
+            // Deny network by default, allow only specific domains via remote-ip
+            // Note: SBPL cannot filter by domain name, only by IP/port.
+            // For partial enforcement, deny all network and let allowed calls
+            // go through the parent process (not sandboxed).
+            rules.push('(deny network-outbound)')
+            this.logger.debug('macOS sandbox: network restricted (domain-level filtering not available in SBPL)')
         }
 
         const seatbelt = rules.join('\n')

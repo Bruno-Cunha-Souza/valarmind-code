@@ -2,6 +2,7 @@ import { errorMessage } from '../core/errors.js'
 import type { TypedEventEmitter } from '../core/events.js'
 import type { FileSystem } from '../core/fs.js'
 import type { HookRunner } from '../hooks/runner.js'
+import type { ModelRouter } from '../llm/model-router.js'
 import { getModelSpec } from '../llm/model-specs.js'
 import { PromptBuilder } from '../llm/prompt-builder.js'
 import { estimateTokens } from '../llm/token-counter.js'
@@ -10,7 +11,6 @@ import type { SandboxManager } from '../security/sandbox.js'
 import type { ToolExecutor } from '../tools/executor.js'
 import type { ToolRegistry } from '../tools/registry.js'
 import type { ToolContext } from '../tools/types.js'
-import type { ModelRouter } from '../llm/model-router.js'
 import type { Tracer } from '../tracing/tracer.js'
 import type { BaseAgent } from './base-agent.js'
 import type { AgentContext, AgentResult, AgentTask } from './types.js'
@@ -34,28 +34,53 @@ function formatToolResult(result: { ok: boolean; value?: string; error?: string 
     return `${head}\n\n[... ${truncatedLines} lines truncated for context efficiency ...]\n\n${tail}`
 }
 
+export interface AgentRunnerDeps {
+    llmClient: LLMClient
+    toolExecutor: ToolExecutor
+    toolRegistry: ToolRegistry
+    tracer: Tracer
+    eventBus: TypedEventEmitter
+    projectDir: string
+    fs: FileSystem
+    hookRunner?: HookRunner
+    tokenBudget?: { target: number; hardCap: number }
+    defaultModel?: string
+    sandboxManager?: SandboxManager
+    modelRouter?: ModelRouter
+}
+
 export class AgentRunner {
-    constructor(
-        private llmClient: LLMClient,
-        private toolExecutor: ToolExecutor,
-        private toolRegistry: ToolRegistry,
-        private tracer: Tracer,
-        private eventBus: TypedEventEmitter,
-        private projectDir: string,
-        private fs: FileSystem,
-        private hookRunner?: HookRunner,
-        private tokenBudget: { target: number; hardCap: number } = { target: 3000, hardCap: 4800 },
-        private defaultModel?: string,
-        private sandboxManager?: SandboxManager,
-        private modelRouter?: ModelRouter
-    ) {}
+    private llmClient: LLMClient
+    private toolExecutor: ToolExecutor
+    private toolRegistry: ToolRegistry
+    private tracer: Tracer
+    private eventBus: TypedEventEmitter
+    private projectDir: string
+    private fs: FileSystem
+    private hookRunner?: HookRunner
+    private tokenBudget: { target: number; hardCap: number }
+    private defaultModel?: string
+    private sandboxManager?: SandboxManager
+    private modelRouter?: ModelRouter
+
+    constructor(deps: AgentRunnerDeps) {
+        this.llmClient = deps.llmClient
+        this.toolExecutor = deps.toolExecutor
+        this.toolRegistry = deps.toolRegistry
+        this.tracer = deps.tracer
+        this.eventBus = deps.eventBus
+        this.projectDir = deps.projectDir
+        this.fs = deps.fs
+        this.hookRunner = deps.hookRunner
+        this.tokenBudget = deps.tokenBudget ?? { target: 3000, hardCap: 4800 }
+        this.defaultModel = deps.defaultModel
+        this.sandboxManager = deps.sandboxManager
+        this.modelRouter = deps.modelRouter
+    }
 
     async run(agent: BaseAgent, task: AgentTask, context: AgentContext): Promise<AgentResult> {
         const controller = new AbortController()
-        const effectiveTimeout = Math.min(
-            task.timeoutOverride ?? agent.timeout.max,
-            agent.timeout.max * 3
-        )
+        const effectiveTimeout = Math.min(task.timeoutOverride ?? agent.timeout.max, agent.timeout.max * 3)
         const timer = setTimeout(() => controller.abort(), effectiveTimeout * 1000)
         const span = this.tracer.startSpan('agent', { agent: agent.type, task: task.id })
 
@@ -85,9 +110,7 @@ export class AgentRunner {
 
                 const routedModel = this.modelRouter?.resolve(agent.type)
                 const baseModel = routedModel ?? this.defaultModel
-                const model = agent.modelSuffix && baseModel
-                    ? `${baseModel}${agent.modelSuffix}`
-                    : routedModel
+                const model = agent.modelSuffix && baseModel ? `${baseModel}${agent.modelSuffix}` : routedModel
 
                 const response = await this.llmClient.chat({
                     model,
@@ -112,7 +135,7 @@ export class AgentRunner {
                     // Continue loop to give the model another chance, appending partial content
                     if (response.content) {
                         messages.push({ role: 'assistant', content: response.content })
-                        messages.push({ role: 'user', content: 'Your response was truncated. Please continue from where you stopped, and use the write_file tool to save the complete file.' })
+                        messages.push({ role: 'user', content: 'Your response was truncated. Continue from where you stopped.' })
                     }
                     continue
                 }
@@ -157,6 +180,11 @@ export class AgentRunner {
                         args = JSON.parse(call.function.arguments)
                     } catch {
                         args = {}
+                        this.eventBus.emit('tool:before', {
+                            toolName: call.function.name,
+                            agentType: agent.type,
+                            args: { _parseError: `Malformed tool arguments: ${call.function.arguments.slice(0, 200)}` },
+                        })
                     }
 
                     // PreToolUse hook
@@ -239,9 +267,7 @@ export class AgentRunner {
     private trimRunnerMessages(messages: ChatMessage[]): void {
         let totalTokens = 0
         for (const msg of messages) {
-            const content = typeof msg.content === 'string'
-                ? msg.content
-                : JSON.stringify(msg.content ?? '')
+            const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? '')
             totalTokens += estimateTokens(content)
         }
 

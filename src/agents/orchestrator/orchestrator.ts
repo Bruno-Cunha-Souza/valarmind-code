@@ -3,10 +3,10 @@ import { errorMessage } from '../../core/errors.js'
 import type { TypedEventEmitter } from '../../core/events.js'
 import type { AgentType } from '../../core/types.js'
 import { summarizeHistory } from '../../llm/history-summarizer.js'
-import type { ChatMessage, LLMClient } from '../../llm/types.js'
+import type { ModelRouter } from '../../llm/model-router.js'
 import { getCompactThreshold } from '../../llm/model-specs.js'
 import { estimateTokens } from '../../llm/token-counter.js'
-import type { ModelRouter } from '../../llm/model-router.js'
+import type { ChatMessage, LLMClient } from '../../llm/types.js'
 import type { Logger } from '../../logger/index.js'
 import type { ContextLoader, ProjectContext } from '../../memory/context-loader.js'
 import type { StateManager } from '../../memory/state-manager.js'
@@ -49,9 +49,7 @@ export class Orchestrator {
 
         let totalTokens = 0
         for (const msg of this.conversationHistory) {
-            totalTokens += estimateTokens(
-                typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? '')
-            )
+            totalTokens += estimateTokens(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? ''))
         }
 
         if (totalTokens > threshold) {
@@ -61,11 +59,8 @@ export class Orchestrator {
 
                 let summaryContent: string
                 try {
-                    const summaryModel = this.deps.modelRouter?.resolve()
-                        ?? this.deps.config?.model ?? ''
-                    summaryContent = await summarizeHistory(
-                        toSummarize, this.deps.llmClient, summaryModel,
-                    )
+                    const summaryModel = this.deps.modelRouter?.resolve() ?? this.deps.config?.model ?? ''
+                    summaryContent = await summarizeHistory(toSummarize, this.deps.llmClient, summaryModel)
                 } catch (err) {
                     this.deps.logger.warn({ error: err }, 'History summarization failed, using fallback')
                     summaryContent = '[Previous conversation summary unavailable]'
@@ -73,11 +68,7 @@ export class Orchestrator {
 
                 const first = this.conversationHistory[0]
                 const recent = this.conversationHistory.slice(-keepRecent)
-                this.conversationHistory = [
-                    first!,
-                    { role: 'user', content: `[Previous conversation summary]\n${summaryContent}` },
-                    ...recent,
-                ]
+                this.conversationHistory = [first!, { role: 'user', content: `[Previous conversation summary]\n${summaryContent}` }, ...recent]
                 this.deps.logger.info(
                     { before: totalTokens, after: this.estimateHistoryTokens() },
                     'Conversation history compacted due to context window limit'
@@ -93,9 +84,7 @@ export class Orchestrator {
 
     private estimateHistoryTokens(): number {
         return this.conversationHistory.reduce((sum, msg) => {
-            return sum + estimateTokens(
-                typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? '')
-            )
+            return sum + estimateTokens(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content ?? ''))
         }, 0)
     }
 
@@ -177,9 +166,8 @@ export class Orchestrator {
             this.conversationHistory.push({ role: 'user', content: input })
             await this.trimHistory()
 
-            // Try streaming for a direct answer first
+            // Buffer all chunks first, then decide if streaming or plan
             const chunks: string[] = []
-            let isStreaming = true
 
             for await (const chunk of this.deps.llmClient.chatStream({
                 model: this.deps.modelRouter?.resolve('orchestrator'),
@@ -188,21 +176,19 @@ export class Orchestrator {
             })) {
                 if (chunk.content) {
                     chunks.push(chunk.content)
-                    if (isStreaming) yield chunk.content
-                }
-                if (chunk.toolCalls && chunk.toolCalls.length > 0) {
-                    isStreaming = false
                 }
             }
 
             const fullContent = chunks.join('')
 
             if (isDirectAnswer(fullContent)) {
+                // Direct answer: yield the complete content
+                yield fullContent
                 this.conversationHistory.push({ role: 'assistant', content: fullContent })
                 await this.trimHistory()
                 await this.deps.stateManager.update({ now: input })
             } else {
-                // For plan-based execution, fall back to non-streaming
+                // Plan-based execution: process plan and yield only summary
                 const plan = parsePlan(fullContent)
                 if (plan) {
                     const results = await this.executePlan(plan, input, agentContext)
@@ -391,7 +377,9 @@ export class Orchestrator {
                 const taskIndex = tasks.indexOf(task)
                 this.taskManager.markInProgress(taskIndex)
                 this.deps.eventBus.emit('task:start', {
-                    taskId: task.id, agent: task.agent, description: task.description,
+                    taskId: task.id,
+                    agent: task.agent,
+                    description: task.description,
                 })
 
                 const agent = this.deps.agentRegistry.get(task.agent as AgentType)
@@ -437,14 +425,18 @@ export class Orchestrator {
                     const result = await this.deps.agentRunner.run(agent, agentTask, agentContext)
                     this.taskManager.markCompleted(taskIndex, result.output)
                     this.deps.eventBus.emit('task:complete', {
-                        taskId: task.id, agent: task.agent, success: true,
+                        taskId: task.id,
+                        agent: task.agent,
+                        success: true,
                     })
                     return result
                 } catch (error) {
                     const msg = errorMessage(error)
                     this.taskManager.markFailed(taskIndex, msg)
                     this.deps.eventBus.emit('task:error', {
-                        taskId: task.id, agent: task.agent, error: msg,
+                        taskId: task.id,
+                        agent: task.agent,
+                        error: msg,
                     })
                     return {
                         taskId: task.id,
@@ -583,10 +575,7 @@ export class Orchestrator {
 
             const newTimeout = agent.timeout.max * 2
             if (this.taskManager.markForRetry(i, newTimeout)) {
-                this.deps.logger.info(
-                    { agent: task.agent, taskIndex: i, newTimeout },
-                    'Retrying timed-out task with extended timeout'
-                )
+                this.deps.logger.info({ agent: task.agent, taskIndex: i, newTimeout }, 'Retrying timed-out task with extended timeout')
                 retried++
             }
         }
@@ -609,12 +598,10 @@ export class Orchestrator {
         parts.push(`**Plan:** ${plan}`)
         parts.push(`**Results:** ${successCount}/${results.length} tasks completed\n`)
 
-        const failedCore = results.filter(
-            (r) => !r.success && Orchestrator.CORE_AGENTS.has(this.getAgentForTask(r.taskId))
-        )
+        const failedCore = results.filter((r) => !r.success && Orchestrator.CORE_AGENTS.has(this.getAgentForTask(r.taskId)))
         if (failedCore.length > 0) {
             const agents = [...new Set(failedCore.map((r) => this.getAgentForTask(r.taskId)))]
-            parts.push(`**Aviso:** Tarefas críticas falharam (${agents.join(', ')}). Os resultados podem estar incompletos.\n`)
+            parts.push(`**Warning:** Critical tasks failed (${agents.join(', ')}). Results may be incomplete.\n`)
         }
 
         for (const result of results) {

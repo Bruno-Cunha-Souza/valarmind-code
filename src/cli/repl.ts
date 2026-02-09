@@ -3,8 +3,8 @@ import * as clack from '@clack/prompts'
 import { getModelLabel } from '../config/defaults.js'
 import type { Container } from '../core/container.js'
 import { promptInput } from './input.js'
-import { handleSlashCommand } from './slash-commands.js'
 import { createProgressTracker } from './progress.js'
+import { handleSlashCommand } from './slash-commands.js'
 import { banner, colors, formatError } from './ui.js'
 
 export async function startREPL(container: Container): Promise<void> {

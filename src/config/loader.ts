@@ -67,5 +67,10 @@ export async function loadConfig(options: LoadConfigOptions): Promise<ResolvedCo
         plugins: merged.plugins ?? DEFAULT_CONFIG.plugins,
         pluginSettings: { ...DEFAULT_CONFIG.pluginSettings, ...merged.pluginSettings },
         sandbox: { ...DEFAULT_CONFIG.sandbox, ...merged.sandbox },
+        costTier:
+            merged.costTier?.light && merged.costTier?.standard && merged.costTier?.heavy
+                ? { light: merged.costTier.light, standard: merged.costTier.standard, heavy: merged.costTier.heavy }
+                : undefined,
+        agentModels: merged.agentModels as ResolvedConfig['agentModels'],
     }
 }

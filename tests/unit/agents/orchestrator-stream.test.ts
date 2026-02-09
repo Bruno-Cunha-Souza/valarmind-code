@@ -81,7 +81,9 @@ describe('Orchestrator.processStream', () => {
             chunks.push(chunk)
         }
 
-        expect(chunks).toEqual(['Hello ', 'world!'])
+        // After BUG-3 fix, stream is buffered to prevent plan leakage
+        // Content is yielded as a single string after determining it's a direct answer
+        expect(chunks).toEqual(['Hello world!'])
     })
 
     it('yields single result for plan-based execution', async () => {

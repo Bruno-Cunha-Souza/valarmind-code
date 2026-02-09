@@ -32,10 +32,11 @@ export function createLLMClient(config: ResolvedConfig, logger: Logger, tracer: 
                                 tools: params.tools as OpenAI.ChatCompletionTool[] | undefined,
                                 temperature: params.temperature ?? config.temperature,
                                 max_tokens: params.maxTokens ?? config.maxTokens,
-                                ...(params.cacheControl ? {
-                                    // @ts-expect-error — OpenRouter extension for Anthropic prompt caching
-                                    extra_body: { cache_control: { type: 'ephemeral' } },
-                                } : {}),
+                                ...(params.cacheControl
+                                    ? {
+                                          extra_body: { cache_control: { type: 'ephemeral' } },
+                                      }
+                                    : {}),
                             },
                             { signal: params.signal }
                         )
@@ -78,40 +79,72 @@ export function createLLMClient(config: ResolvedConfig, logger: Logger, tracer: 
 
         async *chatStream(params: ChatParams): AsyncIterable<ChatChunk> {
             const model = params.model ?? config.model
-            const stream = await openai.chat.completions.create(
-                {
-                    model,
-                    messages: params.messages as OpenAI.ChatCompletionMessageParam[],
-                    tools: params.tools as OpenAI.ChatCompletionTool[] | undefined,
-                    temperature: params.temperature ?? config.temperature,
-                    max_tokens: params.maxTokens ?? config.maxTokens,
-                    stream: true,
-                    ...(params.cacheControl ? {
-                        // @ts-expect-error — OpenRouter extension for Anthropic prompt caching
-                        extra_body: { cache_control: { type: 'ephemeral' } },
-                    } : {}),
-                },
-                { signal: params.signal }
+
+            const stream = await breaker.execute(() =>
+                withRetry(async () => {
+                    return await openai.chat.completions.create(
+                        {
+                            model,
+                            messages: params.messages as OpenAI.ChatCompletionMessageParam[],
+                            tools: params.tools as OpenAI.ChatCompletionTool[] | undefined,
+                            temperature: params.temperature ?? config.temperature,
+                            max_tokens: params.maxTokens ?? config.maxTokens,
+                            stream: true,
+                            ...(params.cacheControl
+                                ? {
+                                      extra_body: { cache_control: { type: 'ephemeral' } },
+                                  }
+                                : {}),
+                        },
+                        { signal: params.signal }
+                    )
+                })
             )
+
+            // Accumulate tool call deltas across chunks for proper merging
+            const pendingToolCalls = new Map<number, { id: string; name: string; arguments: string }>()
 
             for await (const chunk of stream) {
                 if (params.signal?.aborted) break
                 const delta = chunk.choices[0]?.delta
                 if (!delta) continue
 
-                const toolCalls: ToolCall[] | undefined = delta.tool_calls?.map((tc) => ({
-                    id: tc.id ?? '',
-                    type: 'function' as const,
-                    function: {
-                        name: tc.function?.name ?? '',
-                        arguments: tc.function?.arguments ?? '',
-                    },
-                }))
+                // Accumulate tool call chunks by index
+                if (delta.tool_calls) {
+                    for (const tc of delta.tool_calls) {
+                        const idx = tc.index
+                        const existing = pendingToolCalls.get(idx)
+                        if (existing) {
+                            if (tc.function?.name) existing.name += tc.function.name
+                            if (tc.function?.arguments) existing.arguments += tc.function.arguments
+                        } else {
+                            pendingToolCalls.set(idx, {
+                                id: tc.id ?? '',
+                                name: tc.function?.name ?? '',
+                                arguments: tc.function?.arguments ?? '',
+                            })
+                        }
+                    }
+                }
+
+                const finishReason = chunk.choices[0]?.finish_reason ?? undefined
+
+                // Emit completed tool calls only on finish
+                let toolCalls: ToolCall[] | undefined
+                if (finishReason === 'tool_calls' || finishReason === 'stop') {
+                    if (pendingToolCalls.size > 0) {
+                        toolCalls = [...pendingToolCalls.values()].map((tc) => ({
+                            id: tc.id,
+                            type: 'function' as const,
+                            function: { name: tc.name, arguments: tc.arguments },
+                        }))
+                    }
+                }
 
                 yield {
                     content: delta.content ?? undefined,
                     toolCalls,
-                    finishReason: chunk.choices[0]?.finish_reason ?? undefined,
+                    finishReason,
                 }
             }
         },

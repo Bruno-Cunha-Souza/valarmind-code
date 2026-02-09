@@ -26,7 +26,7 @@ Multi-agent CLI for software development, inspired by Claude Code CLI and Codex 
 | **Test**         | Read, Write, Execute | Test execution and creation                       |
 | **Docs**         | Read, Write          | Documentation and ADRs                            |
 | **QA**           | Read, Execute        | Quality validation and build                      |
-| **Init**         | Read, Write          | VALARMIND.md generation                           |
+| **Init**         | Read only            | VALARMIND.md generation                           |
 
 ## CLI
 
@@ -180,10 +180,45 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 - [x] Plugin Manager (HookPlugin, AgentPlugin, ProviderPlugin)
 - [x] Security sandboxing (per-agent profiles, macOS sandbox-exec, Linux bubblewrap)
 
+### Phase 6: Hardening & Bug Fixes
+
+- [ ] Wire `ModelRouter` in container (agent-specific model routing via cost tiers)
+- [ ] Fix `SandboxManager.isAvailable()` exit code verification
+- [ ] Fix streaming plan leakage in `processStream()` (buffer before yield)
+- [ ] Harden macOS sandbox (deny-default or migrate to @anthropic-ai/sandbox-runtime)
+- [ ] Implement network restrictions on macOS (currently Linux-only)
+- [ ] Add retry/circuit breaker to `chatStream()` streaming path
+- [ ] Sanitize process.env before passing to hooks (filter secrets)
+- [ ] Refactor `AgentRunner` constructor to deps object pattern
+- [ ] Fix `finish_reason: 'length'` hardcoded `write_file` instruction
+- [ ] Fix container `shutdown()` error handling (Promise.allSettled)
+- [ ] Align types and documentation (permissions, timeouts, i18n)
+- [ ] Improve TOON compactor (module caching, savings threshold for state)
+- [ ] Fix streaming tool call accumulation across chunks
+
+### Phase 7: Test Coverage Expansion
+
+- [ ] Integration tests for CLI REPL (slash commands, session lifecycle)
+- [ ] Authentication flow tests (first-run, validation, credentials)
+- [ ] Unit tests for individual tools (glob, grep, bash, edit, read, write)
+- [ ] Error scenario tests (network timeout, permission denied, malformed)
+- [ ] Sandbox execution tests (real command wrapping, deny rules)
+
+### Phase 8: Architecture Evolution
+
+- [ ] Plan execution checkpointing (resume-from-failure)
+- [ ] Parallel tool execution for read-only I/O-bound tools
+- [ ] Real token counter (tiktoken/gpt-tokenizer replacing char-based heuristic)
+- [ ] PromptBuilder gradual truncation (partial sections instead of binary drop)
+- [ ] Model-aware cache control (Anthropic-only via OpenRouter)
+- [ ] Semantic tool result caching between agents in same plan
+- [ ] MCP spec updates (Tool Output Schemas, Elicitation, Resource Indicators)
+- [ ] Repo map caching with file-hash invalidation
+- [ ] IDE integration (VS Code extension or Language Server mode)
+
 ### Future (not planned)
 
 - LSP integration via MCP (Serena pattern — user installs language-specific MCP servers)
-- Tree-sitter Aider-style repo map with PageRank ranking
 
 ## References
 

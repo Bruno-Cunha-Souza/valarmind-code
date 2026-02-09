@@ -93,17 +93,16 @@ describe('AgentRunner Timeout & AbortSignal', () => {
         const deps = createRunnerDeps()
         const slowLLM = createSlowLLM(5000) // 5 seconds
 
-        const runner = new AgentRunner(
-            slowLLM,
-            deps.toolExecutor as any,
-            deps.toolRegistry as any,
-            deps.tracer as any,
-            deps.eventBus,
-            '/test',
-            deps.fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-        )
+        const runner = new AgentRunner({
+            llmClient: slowLLM,
+            toolExecutor: deps.toolExecutor as any,
+            toolRegistry: deps.toolRegistry as any,
+            tracer: deps.tracer as any,
+            eventBus: deps.eventBus,
+            projectDir: '/test',
+            fs: deps.fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         // Agent with very short timeout
         const agent = createMockAgent({
@@ -150,17 +149,16 @@ describe('AgentRunner Timeout & AbortSignal', () => {
             },
         }
 
-        const runner = new AgentRunner(
-            slowishLLM,
-            deps.toolExecutor as any,
-            deps.toolRegistry as any,
-            deps.tracer as any,
-            deps.eventBus,
-            '/test',
-            deps.fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-        )
+        const runner = new AgentRunner({
+            llmClient: slowishLLM,
+            toolExecutor: deps.toolExecutor as any,
+            toolRegistry: deps.toolRegistry as any,
+            tracer: deps.tracer as any,
+            eventBus: deps.eventBus,
+            projectDir: '/test',
+            fs: deps.fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({
             timeout: { default: 0.05, max: 0.05 }, // 50ms
@@ -186,17 +184,16 @@ describe('AgentRunner Timeout & AbortSignal', () => {
             errors.push({ agentType: data.agentType, taskId: data.taskId })
         })
 
-        const runner = new AgentRunner(
-            slowLLM,
-            deps.toolExecutor as any,
-            deps.toolRegistry as any,
-            deps.tracer as any,
-            deps.eventBus,
-            '/test',
-            deps.fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-        )
+        const runner = new AgentRunner({
+            llmClient: slowLLM,
+            toolExecutor: deps.toolExecutor as any,
+            toolRegistry: deps.toolRegistry as any,
+            tracer: deps.tracer as any,
+            eventBus: deps.eventBus,
+            projectDir: '/test',
+            fs: deps.fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({
             type: 'code',
@@ -233,17 +230,16 @@ describe('AgentRunner Timeout & AbortSignal', () => {
             },
         }
 
-        const runner = new AgentRunner(
-            trackingLLM,
-            deps.toolExecutor as any,
-            deps.toolRegistry as any,
-            deps.tracer as any,
-            deps.eventBus,
-            '/test',
-            deps.fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-        )
+        const runner = new AgentRunner({
+            llmClient: trackingLLM,
+            toolExecutor: deps.toolExecutor as any,
+            toolRegistry: deps.toolRegistry as any,
+            tracer: deps.tracer as any,
+            eventBus: deps.eventBus,
+            projectDir: '/test',
+            fs: deps.fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({
             timeout: { default: 10, max: 20 },
@@ -269,17 +265,16 @@ describe('AgentRunner Timeout & AbortSignal', () => {
         const deps = createRunnerDeps()
         const client = ScriptedLLMClient.fromStrings(['Quick answer'])
 
-        const runner = new AgentRunner(
-            client,
-            deps.toolExecutor as any,
-            deps.toolRegistry as any,
-            deps.tracer as any,
-            deps.eventBus,
-            '/test',
-            deps.fs as any,
-            undefined,
-            { target: 3000, hardCap: 4800 },
-        )
+        const runner = new AgentRunner({
+            llmClient: client,
+            toolExecutor: deps.toolExecutor as any,
+            toolRegistry: deps.toolRegistry as any,
+            tracer: deps.tracer as any,
+            eventBus: deps.eventBus,
+            projectDir: '/test',
+            fs: deps.fs as any,
+            tokenBudget: { target: 3000, hardCap: 4800 },
+        })
 
         const agent = createMockAgent({
             timeout: { default: 30, max: 60 },

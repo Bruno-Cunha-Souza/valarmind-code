@@ -5,6 +5,7 @@ import { createAgentRegistry } from '../agents/setup.js'
 import type { ResolvedConfig } from '../config/schema.js'
 import { HookRunner } from '../hooks/runner.js'
 import { createLLMClient } from '../llm/client.js'
+import { ModelRouter } from '../llm/model-router.js'
 import type { LLMClient } from '../llm/types.js'
 import type { Logger } from '../logger/index.js'
 import { createLogger } from '../logger/index.js'
@@ -65,19 +66,25 @@ export function createContainer(config: ResolvedConfig): Container {
     const mcpManager = new MCPManager(config.mcp?.servers ?? {}, logger)
     const sandboxManager = new SandboxManager(config.sandbox?.enabled ?? false, logger)
     const pluginManager = new PluginManager({ config, logger, eventBus, mcpManager }, logger)
-    const agentRunner = new AgentRunner(
+    const modelRouter = new ModelRouter({
+        default: config.model,
+        agentModels: config.agentModels,
+        costTier: config.costTier,
+    })
+    const agentRunner = new AgentRunner({
         llmClient,
         toolExecutor,
         toolRegistry,
         tracer,
         eventBus,
-        config.projectDir,
+        projectDir: config.projectDir,
         fs,
         hookRunner,
-        config.tokenBudget,
-        config.model,
-        sandboxManager
-    )
+        tokenBudget: config.tokenBudget,
+        defaultModel: config.model,
+        sandboxManager,
+        modelRouter,
+    })
     const orchestrator = new Orchestrator({
         llmClient,
         agentRunner,
@@ -89,6 +96,7 @@ export function createContainer(config: ResolvedConfig): Container {
         logger,
         projectDir: config.projectDir,
         config: { model: config.model },
+        modelRouter,
     })
     const metricsCollector = new MetricsCollector(eventBus)
 
@@ -121,10 +129,30 @@ export function createContainer(config: ResolvedConfig): Container {
         },
 
         async shutdown() {
-            await pluginManager.shutdown()
-            await mcpManager.shutdown()
-            metricsCollector.dispose()
-            eventBus.removeAll()
+            const errors: Error[] = []
+            try {
+                await pluginManager.shutdown()
+            } catch (e) {
+                errors.push(e instanceof Error ? e : new Error(String(e)))
+            }
+            try {
+                await mcpManager.shutdown()
+            } catch (e) {
+                errors.push(e instanceof Error ? e : new Error(String(e)))
+            }
+            try {
+                metricsCollector.dispose()
+            } catch (e) {
+                errors.push(e instanceof Error ? e : new Error(String(e)))
+            }
+            try {
+                eventBus.removeAll()
+            } catch (e) {
+                errors.push(e instanceof Error ? e : new Error(String(e)))
+            }
+            if (errors.length > 0) {
+                logger.warn({ errors: errors.map((e) => e.message) }, 'Errors during shutdown')
+            }
         },
     }
 
