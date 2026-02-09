@@ -2,7 +2,7 @@
 
 Multi-agent CLI for software development, inspired by Claude Code CLI and Codex CLI. Each step of the development process is handled by a specialist agent.
 
-> **Status:** Phase 1-5 implemented — Foundation, Core Agents, Quality Agents, Integration, Web Search, Plugins & Sandboxing functional. Multi-line input and live config editing available.
+> **Status:** Phase 1-6 implemented — Foundation, Core Agents, Quality Agents, Integration, Web Search, Plugins & Sandboxing, Hardening & Bug Fixes. Multi-line input and live config editing available.
 
 ## Features
 
@@ -182,19 +182,19 @@ valarmind -y --sandbox -p "Run tests and fix failures"
 
 ### Phase 6: Hardening & Bug Fixes
 
-- [ ] Wire `ModelRouter` in container (agent-specific model routing via cost tiers)
-- [ ] Fix `SandboxManager.isAvailable()` exit code verification
-- [ ] Fix streaming plan leakage in `processStream()` (buffer before yield)
-- [ ] Harden macOS sandbox (deny-default or migrate to @anthropic-ai/sandbox-runtime)
-- [ ] Implement network restrictions on macOS (currently Linux-only)
-- [ ] Add retry/circuit breaker to `chatStream()` streaming path
-- [ ] Sanitize process.env before passing to hooks (filter secrets)
-- [ ] Refactor `AgentRunner` constructor to deps object pattern
-- [ ] Fix `finish_reason: 'length'` hardcoded `write_file` instruction
-- [ ] Fix container `shutdown()` error handling (Promise.allSettled)
-- [ ] Align types and documentation (permissions, timeouts, i18n)
-- [ ] Improve TOON compactor (module caching, savings threshold for state)
-- [ ] Fix streaming tool call accumulation across chunks
+- [x] Wire `ModelRouter` in container (agent-specific model routing via cost tiers)
+- [x] Fix `SandboxManager.isAvailable()` exit code verification
+- [x] Fix streaming plan leakage in `processStream()` (buffer before yield)
+- [x] Harden macOS sandbox (deny-default or migrate to @anthropic-ai/sandbox-runtime)
+- [x] Implement network restrictions on macOS (currently Linux-only)
+- [x] Add retry/circuit breaker to `chatStream()` streaming path
+- [x] Sanitize process.env before passing to hooks (filter secrets)
+- [x] Refactor `AgentRunner` constructor to deps object pattern
+- [x] Fix `finish_reason: 'length'` hardcoded `write_file` instruction
+- [x] Fix container `shutdown()` error handling (Promise.allSettled)
+- [x] Align types and documentation (permissions, timeouts, i18n)
+- [x] Improve TOON compactor (module caching, savings threshold for state)
+- [x] Fix streaming tool call accumulation across chunks
 
 ### Phase 7: Test Coverage Expansion
 
